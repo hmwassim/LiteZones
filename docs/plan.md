@@ -77,7 +77,7 @@ LiteZones/
 
 ## Milestones
 
-1. **M0 — Scaffold:** install VS; create solution; exe with hidden window, tray icon, single-instance mutex, clean build via `tools/build.cmd`.
+1. **M0 — Scaffold:** install VS; create solution; exe with hidden window, tray icon, single-instance mutex, clean build via `tools/build.cmd`. **DONE** — Release exe 118 KB, idle ~9.6 MB RAM, mutex verified.
 2. **M1 — Settings + persistence:** `settings.json` loader (shift-drag, hotkeys, colors, span flag, restore-size); data stores with file watcher; tray menu wired.
 3. **M2 — Monitor/layout engine:** ordered work areas, per-monitor layouts, span mode; port `LayoutConfigurator` templates + `Zone` math; defaults on first run. Validate by porting a few `FancyZonesTests/UnitTests/Zone.Spec.cpp` / `Layout.Spec.cpp` cases into a small test exe.
 4. **M3 — Drag-to-snap (core):** hooks, `DragController`, overlay, multi-zone selection, snap + restore-size, elevated/no-border window handling. **Measure idle RAM/CPU here.**
