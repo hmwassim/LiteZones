@@ -1,0 +1,149 @@
+#include "Settings.h"
+
+#include "Paths.h"
+#include "json.h"
+
+#include <windows.h>
+
+namespace
+{
+    const std::wstring kKeyShiftDrag = L"shiftDrag";
+    const std::wstring kKeyMouseSwitch = L"mouseSwitch";
+    const std::wstring kKeyMouseMiddleClickSpanningMultipleZones = L"mouseMiddleClickSpanningMultipleZones";
+    const std::wstring kKeyMoveWindowAcrossMonitors = L"moveWindowAcrossMonitors";
+    const std::wstring kKeyMoveWindowsBasedOnPosition = L"moveWindowsBasedOnPosition";
+    const std::wstring kKeySnapToAppZoneOnOpen = L"snapToAppZoneOnOpen";
+    const std::wstring kKeyOverrideSnapHotkeys = L"overrideSnapHotkeys";
+    const std::wstring kKeyRestoreSize = L"restoreSize";
+    const std::wstring kKeyOpenWindowOnActiveMonitor = L"openWindowOnActiveMonitor";
+    const std::wstring kKeySpanZonesAcrossMonitors = L"spanZonesAcrossMonitors";
+    const std::wstring kKeyMakeDraggedWindowTransparent = L"makeDraggedWindowTransparent";
+    const std::wstring kKeyShowZoneNumber = L"showZoneNumber";
+    const std::wstring kKeyHighlightOpacity = L"highlightOpacity";
+    const std::wstring kKeyZoneColor = L"zoneColor";
+    const std::wstring kKeyZoneBorderColor = L"zoneBorderColor";
+    const std::wstring kKeyZoneHighlightColor = L"zoneHighlightColor";
+    const std::wstring kKeyZoneNumberColor = L"zoneNumberColor";
+    const std::wstring kKeyOverlappingZonesAlgorithm = L"overlappingZonesAlgorithm";
+    const std::wstring kKeyExcludedApps = L"excludedApps";
+
+    int ClampOpacity(int value)
+    {
+        return value < 0 ? 0 : (value > 100 ? 100 : value);
+    }
+}
+
+Settings& Settings::instance()
+{
+    static Settings settings;
+    return settings;
+}
+
+void Settings::Load()
+{
+    const std::wstring file = Paths::SettingsFile();
+    if (GetFileAttributesW(file.c_str()) == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND)
+    {
+        // First run: write defaults so the user has a reference file.
+        Save();
+        m_loaded = true;
+        return;
+    }
+
+    std::wstring text;
+    if (!Paths::ReadTextFile(file, text))
+    {
+        // Transient read failure (file being written by an editor). Keep previous values.
+        return;
+    }
+
+    Json root;
+    if (!Json::Parse(text, root))
+    {
+        // Corrupt file. Keep previous values; do not clobber the user's file.
+        return;
+    }
+
+    SettingsData fresh;
+    if (root.type() == Json::Type::Object)
+    {
+        fresh.shiftDrag = root.At(kKeyShiftDrag).AsBool(fresh.shiftDrag);
+        fresh.mouseSwitch = root.At(kKeyMouseSwitch).AsBool(fresh.mouseSwitch);
+        fresh.mouseMiddleClickSpanningMultipleZones = root.At(kKeyMouseMiddleClickSpanningMultipleZones).AsBool(fresh.mouseMiddleClickSpanningMultipleZones);
+        fresh.moveWindowAcrossMonitors = root.At(kKeyMoveWindowAcrossMonitors).AsBool(fresh.moveWindowAcrossMonitors);
+        fresh.moveWindowsBasedOnPosition = root.At(kKeyMoveWindowsBasedOnPosition).AsBool(fresh.moveWindowsBasedOnPosition);
+        fresh.snapToAppZoneOnOpen = root.At(kKeySnapToAppZoneOnOpen).AsBool(fresh.snapToAppZoneOnOpen);
+        fresh.overrideSnapHotkeys = root.At(kKeyOverrideSnapHotkeys).AsBool(fresh.overrideSnapHotkeys);
+        fresh.restoreSize = root.At(kKeyRestoreSize).AsBool(fresh.restoreSize);
+        fresh.openWindowOnActiveMonitor = root.At(kKeyOpenWindowOnActiveMonitor).AsBool(fresh.openWindowOnActiveMonitor);
+        fresh.spanZonesAcrossMonitors = root.At(kKeySpanZonesAcrossMonitors).AsBool(fresh.spanZonesAcrossMonitors);
+        fresh.makeDraggedWindowTransparent = root.At(kKeyMakeDraggedWindowTransparent).AsBool(fresh.makeDraggedWindowTransparent);
+        fresh.showZoneNumber = root.At(kKeyShowZoneNumber).AsBool(fresh.showZoneNumber);
+        fresh.highlightOpacity = ClampOpacity(static_cast<int>(root.At(kKeyHighlightOpacity).AsNumber(fresh.highlightOpacity)));
+
+        fresh.zoneColor = root.At(kKeyZoneColor).AsString(fresh.zoneColor);
+        fresh.zoneBorderColor = root.At(kKeyZoneBorderColor).AsString(fresh.zoneBorderColor);
+        fresh.zoneHighlightColor = root.At(kKeyZoneHighlightColor).AsString(fresh.zoneHighlightColor);
+        fresh.zoneNumberColor = root.At(kKeyZoneNumberColor).AsString(fresh.zoneNumberColor);
+        fresh.overlappingZonesAlgorithm = root.At(kKeyOverlappingZonesAlgorithm).AsString(fresh.overlappingZonesAlgorithm);
+
+        const Json& excluded = root.At(kKeyExcludedApps);
+        if (excluded.type() == Json::Type::Array)
+        {
+            fresh.excludedApps.clear();
+            for (size_t i = 0; i < excluded.Size(); ++i)
+            {
+                const std::wstring& app = excluded.At(i).AsString();
+                if (!app.empty())
+                {
+                    fresh.excludedApps.push_back(app);
+                }
+            }
+        }
+    }
+
+    data = std::move(fresh);
+    m_loaded = true;
+}
+
+void Settings::Save() const
+{
+    if (!Paths::EnsureConfigDir())
+    {
+        return;
+    }
+
+    Json root = Json::MakeObject();
+    root.Set(kKeyShiftDrag, data.shiftDrag);
+    root.Set(kKeyMouseSwitch, data.mouseSwitch);
+    root.Set(kKeyMouseMiddleClickSpanningMultipleZones, data.mouseMiddleClickSpanningMultipleZones);
+    root.Set(kKeyMoveWindowAcrossMonitors, data.moveWindowAcrossMonitors);
+    root.Set(kKeyMoveWindowsBasedOnPosition, data.moveWindowsBasedOnPosition);
+    root.Set(kKeySnapToAppZoneOnOpen, data.snapToAppZoneOnOpen);
+    root.Set(kKeyOverrideSnapHotkeys, data.overrideSnapHotkeys);
+    root.Set(kKeyRestoreSize, data.restoreSize);
+    root.Set(kKeyOpenWindowOnActiveMonitor, data.openWindowOnActiveMonitor);
+    root.Set(kKeySpanZonesAcrossMonitors, data.spanZonesAcrossMonitors);
+    root.Set(kKeyMakeDraggedWindowTransparent, data.makeDraggedWindowTransparent);
+    root.Set(kKeyShowZoneNumber, data.showZoneNumber);
+    root.Set(kKeyHighlightOpacity, static_cast<double>(data.highlightOpacity));
+    root.Set(kKeyZoneColor, data.zoneColor);
+    root.Set(kKeyZoneBorderColor, data.zoneBorderColor);
+    root.Set(kKeyZoneHighlightColor, data.zoneHighlightColor);
+    root.Set(kKeyZoneNumberColor, data.zoneNumberColor);
+    root.Set(kKeyOverlappingZonesAlgorithm, data.overlappingZonesAlgorithm);
+
+    Json apps = Json::MakeArray();
+    for (const auto& app : data.excludedApps)
+    {
+        apps.Push(Json::MakeString(app));
+    }
+    root.Set(kKeyExcludedApps, apps);
+
+    Paths::WriteTextFile(Paths::SettingsFile(), root.SerializeIndented(), /*crlf=*/true);
+}
+
+bool Settings::loaded() const
+{
+    return m_loaded;
+}

@@ -1,5 +1,14 @@
 #include "App.h"
 
+#include "AppZoneHistory.h"
+#include "DragController.h"
+#include "FileWatcher.h"
+#include "KeyboardSnap.h"
+#include "Paths.h"
+#include "Settings.h"
+#include "WindowProcessing.h"
+#include "WindowProperties.h"
+#include "WindowUtils.h"
 #include "resource.h"
 
 #include <shellapi.h>
@@ -7,6 +16,7 @@
 namespace
 {
     constexpr UINT kTrayCallbackMessage = WM_APP + 1;
+    constexpr UINT kSettingsChangedMessage = WM_APP + 2;
     constexpr UINT kTrayIconId = 1;
     constexpr wchar_t kWindowClassName[] = L"LiteZonesWindow";
     constexpr wchar_t kWindowTitle[] = L"LiteZones";
@@ -14,17 +24,30 @@ namespace
     constexpr wchar_t kRunValueName[] = L"LiteZones";
 
     constexpr UINT kMenuToggleSnapping = 40001;
-    constexpr UINT kMenuAutostart = 40002;
-    constexpr UINT kMenuExit = 40003;
+    constexpr UINT kMenuCycleLayout = 40002;
+    constexpr UINT kMenuReloadConfig = 40003;
+    constexpr UINT kMenuOpenFolder = 40004;
+    constexpr UINT kMenuAutostart = 40005;
+    constexpr UINT kMenuExit = 40006;
 }
 
 App::App(HINSTANCE hInstance) :
-    m_hInstance(hInstance)
+    m_hInstance(hInstance),
+    m_workAreaManager(hInstance)
 {
 }
 
 App::~App()
 {
+    if (m_hooks)
+    {
+        m_hooks->Stop();
+    }
+    m_dragController.reset();
+    if (m_fileWatcher)
+    {
+        m_fileWatcher->Stop();
+    }
     if (m_hwnd)
     {
         DestroyWindow(m_hwnd);
@@ -33,6 +56,16 @@ App::~App()
 
 bool App::Init()
 {
+    if (!Paths::EnsureConfigDir())
+    {
+        return false;
+    }
+
+    Settings::instance().Load();
+    AppZoneHistory::instance().LoadData();
+    m_autostart = IsAutostartEnabled();
+    ReloadWorkAreas();
+
     if (!CreateHiddenWindow())
     {
         return false;
@@ -41,7 +74,17 @@ bool App::Init()
     {
         return false;
     }
-    m_autostart = IsAutostartEnabled();
+
+    m_dragController = std::make_unique<DragController>(m_workAreaManager);
+    m_keyboardSnap = std::make_unique<KeyboardSnap>(m_workAreaManager);
+    m_hooks = std::make_unique<Hooks>(m_hwnd);
+    if (!m_hooks->Start())
+    {
+        return false;
+    }
+
+    m_fileWatcher = std::make_unique<FileWatcher>();
+    m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json" });
     return true;
 }
 
@@ -107,6 +150,10 @@ void App::ShowTrayMenu()
     }
 
     AppendMenuW(menu, MF_STRING | (m_snappingEnabled ? MF_CHECKED : 0), kMenuToggleSnapping, L"Zone snapping");
+    AppendMenuW(menu, MF_STRING | MF_GRAYED, kMenuCycleLayout, L"Cycle layout on monitor");
+    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(menu, MF_STRING, kMenuReloadConfig, L"Reload config");
+    AppendMenuW(menu, MF_STRING, kMenuOpenFolder, L"Open config folder");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (m_autostart ? MF_CHECKED : 0), kMenuAutostart, L"Start with Windows");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -120,6 +167,12 @@ void App::ShowTrayMenu()
     {
     case kMenuToggleSnapping:
         ToggleSnapping();
+        break;
+    case kMenuReloadConfig:
+        ReloadConfig();
+        break;
+    case kMenuOpenFolder:
+        OpenConfigFolder();
         break;
     case kMenuAutostart:
         ToggleAutostart();
@@ -135,7 +188,46 @@ void App::ShowTrayMenu()
 void App::ToggleSnapping()
 {
     m_snappingEnabled = !m_snappingEnabled;
+    if (!m_snappingEnabled && m_dragController)
+    {
+        m_dragController->MoveSizeEnd();
+    }
+    if (m_hooks)
+    {
+        m_hooks->SetSnappingEnabled(m_snappingEnabled);
+    }
     UpdateTrayTip();
+}
+
+void App::ReloadConfig()
+{
+    Settings::instance().Load();
+    ReloadWorkAreas();
+    UpdateTrayTip();
+}
+
+void App::ReloadWorkAreas()
+{
+    // Abort any active drag first: it holds pointers into m_workAreaManager.
+    if (m_dragController)
+    {
+        m_dragController->MoveSizeEnd();
+        if (m_hooks)
+        {
+            m_hooks->DisableLocationChangeTracking();
+        }
+    }
+
+    LayoutData layout;
+    layout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
+    layout.zoneCount = DefaultValues::ZoneCount;
+    m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout);
+}
+
+void App::OpenConfigFolder()
+{
+    const std::wstring dir = Paths::ConfigDir();
+    ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 void App::ToggleAutostart()
@@ -189,6 +281,117 @@ void App::UpdateTrayTip()
     Shell_NotifyIconW(NIM_MODIFY, &nid);
 }
 
+void App::HandleMoveSizeStart(HWND window)
+{
+    if (!m_dragController)
+    {
+        return;
+    }
+
+    m_dragController->MoveSizeStart(window);
+    if (m_dragController->IsDragging())
+    {
+        if (m_hooks)
+        {
+            m_hooks->EnableLocationChangeTracking();
+        }
+        m_dragController->MoveSizeUpdate();
+    }
+}
+
+void App::HandleMoveSizeUpdate()
+{
+    if (m_dragController)
+    {
+        m_dragController->MoveSizeUpdate();
+    }
+}
+
+void App::HandleMoveSizeEnd()
+{
+    if (m_dragController)
+    {
+        m_dragController->MoveSizeEnd();
+    }
+    if (m_hooks)
+    {
+        m_hooks->DisableLocationChangeTracking();
+    }
+}
+
+void App::HandleWindowDestroyed(HWND window)
+{
+    if (m_dragController)
+    {
+        m_dragController->OnWindowDestroyed(window);
+    }
+    if (m_hooks)
+    {
+        m_hooks->DisableLocationChangeTracking();
+    }
+}
+
+void App::HandleSnapHotkey(DWORD vkCode)
+{
+    if (!m_snappingEnabled || !m_keyboardSnap)
+    {
+        return;
+    }
+
+    // Normalize numpad digits to their '0'-'9' equivalents.
+    if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
+    {
+        vkCode = static_cast<DWORD>('0') + (vkCode - VK_NUMPAD0);
+    }
+
+    m_keyboardSnap->HandleKey(GetForegroundWindow(), vkCode);
+}
+
+void App::HandleWindowCreated(HWND window)
+{
+    if (!m_snappingEnabled)
+    {
+        return;
+    }
+
+    if (!WindowProcessing::IsProcessableManually(window))
+    {
+        return;
+    }
+
+    // Already snapped (e.g. re-shown or moved): leave it alone.
+    if (!RetrieveZoneIndexProperty(window).ToIndexSet().empty())
+    {
+        return;
+    }
+
+    const std::wstring processPath = WindowUtils::GetProcessPath(window);
+    if (processPath.empty())
+    {
+        return;
+    }
+    const ZoneIndexSet zones = AppZoneHistory::instance().GetAppLastZoneIndexSet(processPath);
+    if (zones.empty())
+    {
+        return;
+    }
+
+    POINT pt{};
+    GetCursorPos(&pt);
+    WorkArea* workArea = m_workAreaManager.WorkAreaContainingPoint(pt);
+    if (!workArea)
+    {
+        const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+        workArea = m_workAreaManager.WorkAreaFor(primary);
+    }
+    if (!workArea)
+    {
+        return;
+    }
+
+    workArea->Snap(window, zones);
+}
+
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     App* self = reinterpret_cast<App*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -215,6 +418,59 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             ShowTrayMenu();
         }
+        return 0;
+
+    case kSettingsChangedMessage:
+        ReloadConfig();
+        return 0;
+
+    case WM_DISPLAYCHANGE:
+        if (m_dragController)
+        {
+            m_dragController->MoveSizeEnd();
+        }
+        ReloadWorkAreas();
+        return 0;
+
+    case WM_PRIV_MOVESIZESTART:
+        if (m_snappingEnabled)
+        {
+            HandleMoveSizeStart(reinterpret_cast<HWND>(wParam));
+        }
+        return 0;
+
+    case WM_PRIV_MOVESIZEEND:
+        HandleMoveSizeEnd();
+        return 0;
+
+    case WM_PRIV_LOCATIONCHANGE:
+        HandleMoveSizeUpdate();
+        return 0;
+
+    case WM_PRIV_WINDOWDESTROYED:
+        HandleWindowDestroyed(reinterpret_cast<HWND>(wParam));
+        return 0;
+
+    case WM_PRIV_KEYSTATE:
+        if (m_dragController)
+        {
+            m_dragController->OnKeyStateChanged(static_cast<UINT>(wParam), lParam != 0);
+        }
+        return 0;
+
+    case WM_PRIV_MOUSEBUTTON:
+        if (m_dragController)
+        {
+            m_dragController->OnMouseButtonChanged(static_cast<UINT>(wParam), lParam != 0);
+        }
+        return 0;
+
+    case WM_PRIV_SNAP_HOTKEY:
+        HandleSnapHotkey(static_cast<DWORD>(wParam));
+        return 0;
+
+    case WM_PRIV_WINDOWCREATED:
+        HandleWindowCreated(reinterpret_cast<HWND>(wParam));
         return 0;
 
     case WM_DESTROY:

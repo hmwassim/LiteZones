@@ -68,8 +68,9 @@ LiteZones/
 │  ├─ KeyboardSnap.cpp/h   # Win+Ctrl+Alt+num, arrow-key zone nav
 │  ├─ ZonesOverlay.cpp/h   # D2D topmost overlay (on-demand)
 │  ├─ WindowUtils.cpp/h    # processability, restore-size, SetProp stamping
-│  ├─ Settings.cpp/h       # settings.json + ReadDirectoryChangesW file watcher
-│  ├─ Persistence.cpp/h    # custom/applied/zone-history JSON stores
+│  ├─ Settings.cpp/h       # settings.json (17-key camelCase) + first-run defaults
+│  ├─ FileWatcher.cpp/h    # ReadDirectoryChangesW -> PostMessage(WM_APP+2) hot reload
+│  ├─ Persistence.cpp/h    # custom/applied/zone-history JSON stores (M2/M4)
 │  └─ json.{h,cpp}         # minimal JSON module
 ├─ tools/build.cmd         # MSBuild Release|x64
 └─ README.md               # config format + hotkeys + autostart docs
@@ -78,10 +79,10 @@ LiteZones/
 ## Milestones
 
 1. **M0 — Scaffold:** install VS; create solution; exe with hidden window, tray icon, single-instance mutex, clean build via `tools/build.cmd`. **DONE** — Release exe 118 KB, idle ~9.6 MB RAM, mutex verified.
-2. **M1 — Settings + persistence:** `settings.json` loader (shift-drag, hotkeys, colors, span flag, restore-size); data stores with file watcher; tray menu wired.
-3. **M2 — Monitor/layout engine:** ordered work areas, per-monitor layouts, span mode; port `LayoutConfigurator` templates + `Zone` math; defaults on first run. Validate by porting a few `FancyZonesTests/UnitTests/Zone.Spec.cpp` / `Layout.Spec.cpp` cases into a small test exe.
-4. **M3 — Drag-to-snap (core):** hooks, `DragController`, overlay, multi-zone selection, snap + restore-size, elevated/no-border window handling. **Measure idle RAM/CPU here.**
-5. **M4 — Keyboard snap + zone history:** `Win+Ctrl+Alt+[1-9]`/arrow nav; remember app's last zone and snap on reopen; apply layouts on monitor add/remove.
+2. **M1 — Settings + persistence:** `settings.json` loader (shift-drag, hotkeys, colors, span flag, restore-size); data stores with file watcher; tray menu wired. **DONE** — `json`, `Paths`, `Settings`, `FileWatcher` modules; hot reload via `WM_APP+2`; "Reload config" + "Open config folder" in tray; Release exe 223 KB, idle ~9.4 MB. Persistence stores (`Persistence.cpp`) folded into M2/M4 rather than stubbed.
+3. **M2 — Monitor/layout engine:** ordered work areas, per-monitor layouts, span mode; port `LayoutConfigurator` templates + `Zone` math; defaults on first run. Validate by porting a few `FancyZonesTests/UnitTests/Zone.Spec.cpp` / `Layout.Spec.cpp` cases into a small test exe. **DONE** — new modules `Zone`, `LayoutTypes`, `LayoutEngine` (Focus/Rows/Columns/Grid/PriorityGrid/Custom + `CalculateGridZones` + `Layout` + selection algorithms + `SetCustomLayoutData` registry), `MonitorManager` (ordered work areas, DPI), `WorkArea`, `WorkAreaManager`; app reloads work areas on `WM_DISPLAYCHANGE` and config reload (default PriorityGrid/3). New `tests/ZoneTests` console project: 16 ported tests all green (`bin\x64\Release\ZoneTests.exe`, exit 0). Release exe 246 KB, idle 9.5 MB WS.
+4. **M3 — Drag-to-snap (core):** hooks, `DragController`, overlay, multi-zone selection, snap + restore-size, elevated/no-border window handling. **DONE** — new modules `Hooks` (WinEvent MOVESIZESTART/MOVESIZEEND/DESTROY + drag-scoped LOCATIONCHANGE, WH_KEYBOARD_LL Shift/Ctrl, WH_MOUSE_LL right/middle toggles → WM_PRIV_*), `WindowUtils` (save/restore size+origin, SizeWindowToRect, ScreenToWorkAreaCoords, transparency, cursor-shape resize guard), `WindowProcessing` (IsProcessableManually), `WindowProperties` (ZoneIndexSetBitmask SetProp stamping), `LayoutAssignedWindows`, `HighlightedZones`, `ZonesOverlay` (Direct2D), `Colors` (GetZoneColors), `DragController` (DraggingState XOR modes + WindowMouseSnap port). `WorkArea` gained a topmost popup tool window + Snap/Unsnap/ShowZones/HideZones. Verified: 17/17 unit tests, exe 287.5 KB, idle 10.3 MB WS / 1.7 MB private, manual launch OK.
+5. **M4 — Keyboard snap + zone history:** `Win+Ctrl+Alt+[1-9]`/arrow nav; remember app's last zone and snap on reopen; apply layouts on monitor add/remove. **DONE** — new modules `util` (`ChooseNextZoneByPosition`/`PrepareRectForCycling`), `AppZoneHistory` (`app-zone-history.json` keyed by app process path only), `KeyboardSnap` (zone-number snap, arrow nav by index or position, cross-monitor cycling); `Hooks` gained `WM_PRIV_SNAP_HOTKEY`/`WM_PRIV_WINDOWCREATED` (WM_APP+16/17), snap-hotkey swallowing in the keyboard proc (Win+Ctrl+Alt+digit/arrow, plus Win+arrow when `overrideSnapHotkeys`), and EVENT_OBJECT_SHOW/CREATE window-created events gated on `snapToAppZoneOnOpen`; `WorkArea::Snap` persists history; `WindowUtils::GetProcessPath` / `LayoutAssignedWindows::GetZoneIndexSetFromWindow` added. Verified: 19/19 unit tests (TestChooseNextZoneByPosition, TestAppZoneHistoryStore), exe 314.5 KB, idle 10.3 MB WS / 1.7 MB private, smoke launch OK.
 6. **M5 — Custom layouts via JSON:** grid (rows/columns percentages + cell-child-map) and canvas (absolute rects) in `custom-layouts.json`; tray "cycle layout on monitor" as editor substitute.
 7. **M6 — Packaging + perf verification:** Release `/MT` build, verify <2 MB / idle targets with Process Explorer; autostart registration + simple uninstall (delete folder + run key); README.
 

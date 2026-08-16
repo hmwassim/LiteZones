@@ -30,6 +30,8 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
   "mouseMiddleClickSpanningMultipleZones": false,
   "moveWindowAcrossMonitors": false,
   "moveWindowsBasedOnPosition": false,
+  "snapToAppZoneOnOpen": false,
+  "overrideSnapHotkeys": true,
   "restoreSize": true,
   "openWindowOnActiveMonitor": false,
   "spanZonesAcrossMonitors": false,
@@ -47,11 +49,14 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
 
 `overlappingZonesAlgorithm`: `smallest`, `largest`, `positional`, `closestCenter`, `enumElements`.
 
+`snapToAppZoneOnOpen` (default `false`): when a process with history opens a new window, it is snapped into its last-used zone. `overrideSnapHotkeys` (default `true`): also respond to `Win+Arrow` (without Ctrl+Alt); when `false`, `Win+Arrow` passes through to the OS window-snap behavior.
+
 ### Keyboard snap hotkeys (v1, fixed)
 
-- `Win+Ctrl+Alt+[1-9]` — move focused window into zone N on current monitor.
-- `Win+Ctrl+Alt+Left/Right` — cycle to previous/next monitor's zone grid.
-- Arrow keys after activating a zone — move window to the zone in that direction (`ChooseNextZoneByPosition`).
+- `Win+Ctrl+Alt+[0-9]` — move focused window into the zone with that number (0 = zone 0, 9 = zone 9).
+- `Win+Ctrl+Alt+Left/Right/Up/Down` — move the window one zone in that direction; at an edge it cycles within the monitor, or jumps to the adjacent monitor's first/last zone when `moveWindowAcrossMonitors` is on.
+- `Win+Left/Right/Up/Down` — same, only when `overrideSnapHotkeys` is `true`.
+- `Up`/`Down` zone movement (by direction/position) requires `moveWindowsBasedOnPosition`; with it off, arrows move by zone index (`Left`/`Right` only).
 
 ## custom-layouts.json
 
@@ -125,20 +130,20 @@ LiteZones v1 keeps `virtual-desktop` fixed to the empty GUID (no per-desktop lay
 
 ## app-zone-history.json
 
+v1 keys history by app process path only (layouts are uniform across monitors, so a single zone index set per app suffices; no per-monitor/per-virtual-desktop history).
+
 ```json
 {
   "app-zone-history": [
     {
       "app-path": "C:\\Windows\\System32\\notepad.exe",
-      "zones": [
-        { "zone-index-set": [0, 1], "monitor-id": { "monitor": "\\\\.\\DISPLAY1", "monitor-instance": "1", "monitor-number": 1, "serial-number": "ABCD1234", "virtual-desktop": "00000000-0000-0000-0000-000000000000" } }
-      ]
+      "zone-index-set": [0, 1]
     }
   ]
 }
 ```
 
-`zone-index-set` may be a single int or an array (FancyZones accepts both).
+`zone-index-set` is an array of zone indices the window was last snapped to (single-int form is not emitted by v1). Written on every snap; consumed when a new window for the app appears and `snapToAppZoneOnOpen` is enabled.
 
 ## File watching
 
