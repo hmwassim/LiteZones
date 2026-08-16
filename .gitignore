@@ -6,3 +6,10 @@
 .vs/
 *.user
 *.suo
+
+# Session tracking (never committed)
+progress.md
+rules.md
+
+# Local config (user-specific)
+*.local.json
