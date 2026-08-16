@@ -1,6 +1,8 @@
 #include "MonitorManager.h"
 
 #include <algorithm>
+#include <cstdlib>
+#include <cwchar>
 #include <tuple>
 
 using std::min;
@@ -176,6 +178,62 @@ namespace MonitorUtils
         }
 
         return (dpi == 0) ? kDefaultDpi : dpi;
+    }
+
+    Display GetDevice(HMONITOR monitor)
+    {
+        Display display;
+        MONITORINFOEXW mi{};
+        mi.cbSize = sizeof(mi);
+        if (!GetMonitorInfoW(monitor, &mi))
+        {
+            return display;
+        }
+
+        constexpr wchar_t kDisplayPrefix[] = L"DISPLAY";
+        const wchar_t* numberStart = wcsstr(mi.szDevice, kDisplayPrefix);
+        if (numberStart)
+        {
+            numberStart += wcslen(kDisplayPrefix);
+            display.number = _wtoi(numberStart);
+        }
+
+        DISPLAY_DEVICEW dd{};
+        dd.cb = sizeof(dd);
+        if (EnumDisplayDevicesW(mi.szDevice, 0, &dd, EDD_GET_DEVICE_INTERFACE_NAME))
+        {
+            display.deviceId = dd.DeviceID;
+            const size_t firstHash = display.deviceId.find(L'#');
+            if (firstHash != std::wstring::npos)
+            {
+                const size_t secondHash = display.deviceId.find(L'#', firstHash + 1);
+                if (secondHash != std::wstring::npos)
+                {
+                    const size_t thirdHash = display.deviceId.find(L'#', secondHash + 1);
+                    display.instanceId = display.deviceId.substr(
+                        secondHash + 1,
+                        (thirdHash == std::wstring::npos) ? std::wstring::npos : thirdHash - secondHash - 1);
+                }
+            }
+        }
+
+        return display;
+    }
+
+    std::wstring GetDeviceKey(HMONITOR monitor)
+    {
+        const Display display = GetDevice(monitor);
+        if (!display.deviceId.empty())
+        {
+            return display.instanceId.empty() ? display.deviceId : display.deviceId + L"|" + display.instanceId;
+        }
+        MONITORINFOEXW mi{};
+        mi.cbSize = sizeof(mi);
+        if (GetMonitorInfoW(monitor, &mi))
+        {
+            return mi.szDevice;
+        }
+        return L"";
     }
 
     std::vector<MonitorRect> GetWorkAreas(bool span)

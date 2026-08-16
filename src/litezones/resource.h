@@ -1,3 +1,13 @@
 #pragma once
 
 #define IDI_APP 101
+
+#define IDD_NEW_LAYOUT 201
+#define IDD_RENAME_LAYOUT 202
+
+#define IDC_NEW_NAME 1001
+#define IDC_NEW_GRID 1002
+#define IDC_NEW_CANVAS 1003
+#define IDC_RENAME_NAME 1004
+#define IDC_NEW_ROWS 1005
+#define IDC_NEW_COLS 1006

@@ -9,6 +9,7 @@
 #include <memory>
 
 class DragController;
+class EditorWindow;
 class FileWatcher;
 class KeyboardSnap;
 
@@ -34,7 +35,9 @@ private:
     void ToggleAutostart();
     void ReloadConfig();
     void OpenConfigFolder();
-    void ReloadWorkAreas();
+    void ReloadWorkAreas(bool forceRelayout = true);
+    void CycleLayoutOnMonitor();
+    void OpenLayoutEditor();
     bool IsAutostartEnabled() const;
 
     void HandleMoveSizeStart(HWND window);
@@ -53,5 +56,6 @@ private:
     std::unique_ptr<DragController> m_dragController;
     std::unique_ptr<KeyboardSnap> m_keyboardSnap;
     std::unique_ptr<Hooks> m_hooks;
+    std::unique_ptr<EditorWindow> m_editor;
     WorkAreaManager m_workAreaManager;
 };

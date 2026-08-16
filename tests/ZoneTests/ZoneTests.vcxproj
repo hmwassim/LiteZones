@@ -88,6 +88,9 @@
   <ItemGroup>
     <ClCompile Include="ZoneTests.cpp" />
     <ClCompile Include="..\..\src\litezones\AppZoneHistory.cpp" />
+    <ClCompile Include="..\..\src\litezones\AppliedLayouts.cpp" />
+    <ClCompile Include="..\..\src\litezones\CustomLayouts.cpp" />
+    <ClCompile Include="..\..\src\litezones\GridData.cpp" />
     <ClCompile Include="..\..\src\litezones\json.cpp" />
     <ClCompile Include="..\..\src\litezones\LayoutEngine.cpp" />
     <ClCompile Include="..\..\src\litezones\MonitorManager.cpp" />
@@ -99,6 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\litezones\AppZoneHistory.h" />
+    <ClInclude Include="..\..\src\litezones\AppliedLayouts.h" />
+    <ClInclude Include="..\..\src\litezones\CanvasMath.h" />
+    <ClInclude Include="..\..\src\litezones\CustomLayouts.h" />
+    <ClInclude Include="..\..\src\litezones\GridData.h" />
     <ClInclude Include="..\..\src\litezones\json.h" />
     <ClInclude Include="..\..\src\litezones\LayoutEngine.h" />
     <ClInclude Include="..\..\src\litezones\LayoutTypes.h" />

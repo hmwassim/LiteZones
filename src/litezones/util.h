@@ -1,12 +1,32 @@
 #pragma once
 
+#include "LayoutTypes.h"
+
 #include <windows.h>
 
+#include <string>
 #include <vector>
 
 // Pure geometry/cycle helpers ported from FancyZonesLib/util.cpp (no WinRT deps).
 namespace Util
 {
+    struct GuidLess
+    {
+        bool operator()(const GUID& lhs, const GUID& rhs) const noexcept
+        {
+            return memcmp(&lhs, &rhs, sizeof(GUID)) < 0;
+        }
+    };
+
+    // Strict "8-4-4-4-12" hex GUID parsing (no braces). Returns false on malformed input.
+    bool GuidFromString(const std::wstring& str, GUID& out) noexcept;
+
+    // Canonical uppercase "8-4-4-4-12" form.
+    std::wstring GuidToString(const GUID& guid) noexcept;
+
+    std::wstring TypeToString(FancyZonesDataTypes::ZoneSetLayoutType type) noexcept;
+    FancyZonesDataTypes::ZoneSetLayoutType TypeFromString(const std::wstring& value) noexcept;
+
     // Returns the index into zoneRects of the zone reached by moving from the
     // window center in the given arrow direction, or zoneRects.size() when
     // there is no zone in that direction. Mirrors FancyZonesUtils::ChooseNextZoneByPosition.

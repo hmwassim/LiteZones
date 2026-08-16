@@ -3,6 +3,7 @@
 #include "WindowProperties.h"
 
 #include <dwmapi.h>
+#include <cstdlib>
 #include <string>
 
 namespace WindowUtils
@@ -40,13 +41,28 @@ namespace WindowUtils
 
     std::wstring GetProcessPath(HWND window) noexcept
     {
-        std::wstring path(MAX_PATH, L'\0');
-        const DWORD written = GetWindowModuleFileNameW(window, path.data(), static_cast<DWORD>(path.size()));
-        if (written == 0)
+        DWORD processId = 0;
+        if (!GetWindowThreadProcessId(window, &processId) || processId == 0)
         {
             return std::wstring();
         }
+
+        HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+        if (!process)
+        {
+            return std::wstring();
+        }
+
+        std::wstring path(32768, L'\0');
+        DWORD written = static_cast<DWORD>(path.size());
+        if (!QueryFullProcessImageNameW(process, 0, path.data(), &written))
+        {
+            CloseHandle(process);
+            return std::wstring();
+        }
         path.resize(written);
+
+        CloseHandle(process);
         return path;
     }
 
@@ -126,6 +142,8 @@ namespace WindowUtils
 
         ScreenToWorkAreaCoords(window, rect);
 
+        const RECT screenTarget = rect;
+
         placement.rcNormalPosition = rect;
         placement.flags |= WPF_ASYNCWINDOWPLACEMENT;
 
@@ -139,6 +157,39 @@ namespace WindowUtils
 
         // Do it again, allowing Windows to resize the window and set the correct scaling (Issue #365).
         SetWindowPlacement(window, &placement);
+
+        // Some apps (notably Chromium-based browsers) keep overriding the placement
+        // while their move loop is still finalizing, so keep re-applying until the
+        // window actually lands on the target (or give up after ~1 second).
+        for (int attempt = 0; attempt < 10; ++attempt)
+        {
+            RECT current{};
+            if (!GetWindowRect(window, &current))
+            {
+                break;
+            }
+            if (std::abs(current.left - screenTarget.left) <= 4 &&
+                std::abs(current.top - screenTarget.top) <= 4 &&
+                std::abs(current.right - current.left - (screenTarget.right - screenTarget.left)) <= 4 &&
+                std::abs(current.bottom - current.top - (screenTarget.bottom - screenTarget.top)) <= 4)
+            {
+                break;
+            }
+
+            Sleep(100);
+            GetWindowPlacement(window, &placement);
+            if (maximizeLater || placement.showCmd == SW_SHOWMAXIMIZED)
+            {
+                placement.showCmd = SW_SHOWMAXIMIZED;
+            }
+            else
+            {
+                placement.showCmd = SW_RESTORE;
+            }
+            placement.rcNormalPosition = rect;
+            placement.flags &= ~WPF_ASYNCWINDOWPLACEMENT;
+            SetWindowPlacement(window, &placement);
+        }
     }
 
     void SaveWindowSizeAndOrigin(HWND window) noexcept

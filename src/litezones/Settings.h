@@ -21,7 +21,7 @@ struct SettingsData
 
     std::wstring zoneColor = L"#AACDFF";
     std::wstring zoneBorderColor = L"#FFFFFF";
-    std::wstring zoneHighlightColor = L"#AACDFF";
+    std::wstring zoneHighlightColor = L"#FFFFFF";
     std::wstring zoneNumberColor = L"#000000";
     std::wstring overlappingZonesAlgorithm = L"closestCenter";
 

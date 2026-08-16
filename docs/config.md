@@ -7,8 +7,8 @@ All files live under `%LOCALAPPDATA%\LiteZones\` (FancyZones uses `%LOCALAPPDATA
 | File | Purpose | Written by |
 |---|---|---|
 | `settings.json` | Global behavior options | LiteZones / user |
-| `custom-layouts.json` | User-defined grid/canvas layouts | user |
-| `applied-layouts.json` | Which layout applies to each monitor | LiteZones / user |
+| `custom-layouts.json` | User-defined grid/canvas layouts | user / editor |
+| `applied-layouts.json` | Which layout applies to each monitor | LiteZones / editor |
 | `app-zone-history.json` | Last zone per app (for re-snap on reopen) | LiteZones |
 
 FancyZones also has `layout-hotkeys.json`, `layout-templates.json`, `default-layouts.json`, `zones-settings.json` (legacy). LiteZones folds template + default-layout selection into `settings.json` / `applied-layouts.json` to reduce file count.
@@ -72,7 +72,7 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
         "columns": 3,
         "rows-percentage": [50, 50],
         "columns-percentage": [33.33, 33.33, 33.34],
-        "cell-child-map": [[0, 0], [0, 0], [0, 1], [1, 1], [1, 2], [1, 2]],
+        "cell-child-map": [[0, 0, 1], [1, 2, 2]],
         "show-spacing": true,
         "spacing": 16,
         "sensitivity-radius": 20
@@ -96,7 +96,7 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
 }
 ```
 
-Notes: `X`/`Y` are uppercase (matches FancyZones). Percentages can be integers or floats (FancyZones uses 1/10000 multipliers internally; accept either).
+Notes: `X`/`Y` are uppercase (matches FancyZones). Percentages can be integers or floats (FancyZones uses 1/10000 multipliers internally; accept either). `cell-child-map` has `rows` arrays of `columns` child-zone indices; `zone-count` is the max child index + 1. The built-in editor (M5) writes this file via the working-copy mechanism: edits are held in memory and persisted on Apply / Apply-to-all / editor close.
 
 ## applied-layouts.json
 
@@ -107,10 +107,10 @@ Assigns a layout to each monitor work area. Template layouts are referenced by t
   "applied-layouts": [
     {
       "device": {
-        "monitor": "\\\\.\\DISPLAY1",
-        "monitor-instance": "1",
-        "monitor-number": 1,
-        "serial-number": "ABCD1234",
+        "monitor": "\\\\?\\DISPLAY#AUS1030#5&2f1a1a0&0&UID25677#{e6f07b5f-ee97-4a90-b055-3bdf9f0d4d01}",
+        "monitor-instance": "",
+        "monitor-number": 0,
+        "serial-number": "",
         "virtual-desktop": "00000000-0000-0000-0000-000000000000"
       },
       "applied-layout": {
@@ -126,7 +126,7 @@ Assigns a layout to each monitor work area. Template layouts are referenced by t
 }
 ```
 
-LiteZones v1 keeps `virtual-desktop` fixed to the empty GUID (no per-desktop layouts) and derives a stable monitor key from `EnumDisplayMonitors` device name + instance.
+LiteZones v1 keeps `virtual-desktop` fixed to the empty GUID (no per-desktop layouts). The stable per-monitor lookup key is the `EnumDisplayDevices` **interface string** (`EDD_GET_DEVICE_INTERFACE_NAME`), which already encodes the monitor instance, so the serialized `device.monitor` holds that string and `monitor-instance` is empty; `monitor-number`/`serial-number` are placeholders. Template layouts are referenced by type (e.g. `priority-grid`); custom layouts by their `custom-layouts.json` UUID.
 
 ## app-zone-history.json
 
@@ -147,17 +147,16 @@ v1 keys history by app process path only (layouts are uniform across monitors, s
 
 ## File watching
 
-`settings.json` and `custom-layouts.json` are hot-reloaded. LiteZones uses `ReadDirectoryChangesW` on the `%LOCALAPPDATA%\LiteZones` directory (single watcher thread, one-shot restartable), posting a message to the main thread. This replaces the `FileWatcher`/`EventWaiter` machinery in `src/common/SettingsAPI`.
+`settings.json` and `custom-layouts.json` are hot-reloaded. LiteZones uses `ReadDirectoryChangesW` on the `%LOCALAPPDATA%\LiteZones` directory (single watcher thread, one-shot restartable), posting a message to the main thread. This replaces the `FileWatcher`/`EventWaiter` machinery in `src/common/SettingsAPI`. The editor also triggers an in-process reload via `App::ReloadConfig` after Apply / Apply-to-all / close so work areas rebuild immediately.
 
-## Tray menu (editor substitute)
+## Tray menu
 
-Since there is no graphical editor in v1:
-
-- **Enable / Disable** — toggles zone snapping globally.
+- **Zone snapping** — toggles zone snapping globally.
 - **Cycle layout on monitor** — rotates the active monitor through the applied layout's templates/custom layouts (quick experimentation).
+- **Edit layouts...** — opens the in-process layout editor (M5): library list (templates + custom), monitor combo, New / Duplicate / Delete / Rename, zone preview (grid separator-drag + double-click split + select/merge, canvas draw/move/resize/delete), and per-monitor **Apply** / **Apply to all**.
 - **Reload config** — re-reads all JSON files.
 - **Open config folder** — opens `%LOCALAPPDATA%\LiteZones`.
-- **Autostart** — adds/removes `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `LiteZones`.
+- **Start with Windows** — adds/removes `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `LiteZones`.
 - **Exit** — quits.
 
 ## Autostart

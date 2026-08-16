@@ -1,9 +1,13 @@
 #include "App.h"
 
 #include "AppZoneHistory.h"
+#include "AppliedLayouts.h"
+#include "CustomLayouts.h"
 #include "DragController.h"
+#include "EditorWindow.h"
 #include "FileWatcher.h"
 #include "KeyboardSnap.h"
+#include "MonitorManager.h"
 #include "Paths.h"
 #include "Settings.h"
 #include "WindowProcessing.h"
@@ -29,6 +33,40 @@ namespace
     constexpr UINT kMenuOpenFolder = 40004;
     constexpr UINT kMenuAutostart = 40005;
     constexpr UINT kMenuExit = 40006;
+    constexpr UINT kMenuEditLayouts = 40007;
+
+    // The cycle rotates through the built-in templates then every custom layout.
+    std::vector<LayoutData> BuildLayoutCycleCandidates()
+    {
+        std::vector<LayoutData> candidates;
+        const std::vector<FancyZonesDataTypes::ZoneSetLayoutType> templates = {
+            FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid,
+            FancyZonesDataTypes::ZoneSetLayoutType::Grid,
+            FancyZonesDataTypes::ZoneSetLayoutType::Rows,
+            FancyZonesDataTypes::ZoneSetLayoutType::Columns,
+            FancyZonesDataTypes::ZoneSetLayoutType::Focus,
+            FancyZonesDataTypes::ZoneSetLayoutType::Blank,
+        };
+        for (const auto type : templates)
+        {
+            LayoutData layout;
+            layout.type = type;
+            layout.showSpacing = DefaultValues::ShowSpacing;
+            layout.spacing = DefaultValues::Spacing;
+            layout.zoneCount = DefaultValues::ZoneCount;
+            layout.sensitivityRadius = DefaultValues::SensitivityRadius;
+            candidates.push_back(layout);
+        }
+        for (const auto& [uuid, data] : CustomLayouts::instance().AllLayouts())
+        {
+            (void)data;
+            if (const auto layout = CustomLayouts::instance().GetLayout(uuid); layout.has_value())
+            {
+                candidates.push_back(*layout);
+            }
+        }
+        return candidates;
+    }
 }
 
 App::App(HINSTANCE hInstance) :
@@ -48,6 +86,10 @@ App::~App()
     {
         m_fileWatcher->Stop();
     }
+    if (m_editor)
+    {
+        m_editor->Close();
+    }
     if (m_hwnd)
     {
         DestroyWindow(m_hwnd);
@@ -63,6 +105,8 @@ bool App::Init()
 
     Settings::instance().Load();
     AppZoneHistory::instance().LoadData();
+    CustomLayouts::instance().LoadData();
+    AppliedLayouts::instance().LoadData();
     m_autostart = IsAutostartEnabled();
     ReloadWorkAreas();
 
@@ -84,7 +128,14 @@ bool App::Init()
     }
 
     m_fileWatcher = std::make_unique<FileWatcher>();
-    m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json" });
+    m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json", L"custom-layouts.json", L"applied-layouts.json" });
+
+    // Debug hook: set LITEZONES_OPEN_EDITOR=1 to open the layout editor on start.
+    wchar_t openEditor[2]{};
+    if (GetEnvironmentVariableW(L"LITEZONES_OPEN_EDITOR", openEditor, 2) > 0 && openEditor[0] == L'1')
+    {
+        OpenLayoutEditor();
+    }
     return true;
 }
 
@@ -150,7 +201,8 @@ void App::ShowTrayMenu()
     }
 
     AppendMenuW(menu, MF_STRING | (m_snappingEnabled ? MF_CHECKED : 0), kMenuToggleSnapping, L"Zone snapping");
-    AppendMenuW(menu, MF_STRING | MF_GRAYED, kMenuCycleLayout, L"Cycle layout on monitor");
+    AppendMenuW(menu, MF_STRING, kMenuCycleLayout, L"Cycle layout on monitor");
+    AppendMenuW(menu, MF_STRING, kMenuEditLayouts, L"Edit layouts...");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, kMenuReloadConfig, L"Reload config");
     AppendMenuW(menu, MF_STRING, kMenuOpenFolder, L"Open config folder");
@@ -167,6 +219,12 @@ void App::ShowTrayMenu()
     {
     case kMenuToggleSnapping:
         ToggleSnapping();
+        break;
+    case kMenuCycleLayout:
+        CycleLayoutOnMonitor();
+        break;
+    case kMenuEditLayouts:
+        OpenLayoutEditor();
         break;
     case kMenuReloadConfig:
         ReloadConfig();
@@ -202,11 +260,13 @@ void App::ToggleSnapping()
 void App::ReloadConfig()
 {
     Settings::instance().Load();
+    CustomLayouts::instance().LoadData();
+    AppliedLayouts::instance().LoadData();
     ReloadWorkAreas();
     UpdateTrayTip();
 }
 
-void App::ReloadWorkAreas()
+void App::ReloadWorkAreas(bool forceRelayout)
 {
     // Abort any active drag first: it holds pointers into m_workAreaManager.
     if (m_dragController)
@@ -221,7 +281,51 @@ void App::ReloadWorkAreas()
     LayoutData layout;
     layout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
     layout.zoneCount = DefaultValues::ZoneCount;
-    m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout);
+    m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout, forceRelayout);
+}
+
+void App::CycleLayoutOnMonitor()
+{
+    POINT pt{};
+    GetCursorPos(&pt);
+    const HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTOPRIMARY);
+
+    LayoutData defaultLayout;
+    defaultLayout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
+    defaultLayout.zoneCount = DefaultValues::ZoneCount;
+    const LayoutData current = LayoutResolver::Resolve(monitor, Settings::instance().data.spanZonesAcrossMonitors, defaultLayout);
+
+    const std::vector<LayoutData> candidates = BuildLayoutCycleCandidates();
+    size_t index = candidates.size();
+    for (size_t i = 0; i < candidates.size(); ++i)
+    {
+        if (candidates[i].type == current.type && candidates[i].uuid == current.uuid && candidates[i].zoneCount == current.zoneCount)
+        {
+            index = i;
+            break;
+        }
+    }
+    const size_t next = (index + 1) % candidates.size();
+
+    const std::wstring deviceKey = MonitorUtils::GetDeviceKey(monitor);
+    AppliedLayouts::instance().ApplyLayout(deviceKey, candidates[next]);
+    AppliedLayouts::instance().SaveData();
+    ReloadWorkAreas();
+}
+
+void App::OpenLayoutEditor()
+{
+    if (!m_editor)
+    {
+        m_editor = std::make_unique<EditorWindow>(m_hInstance, m_hwnd);
+        m_editor->SetOnChanged([this] { ReloadConfig(); });
+    }
+    if (!m_editor->IsOpen() && !m_editor->Create())
+    {
+        m_editor.reset();
+        return;
+    }
+    m_editor->Show();
 }
 
 void App::OpenConfigFolder()
@@ -429,7 +533,7 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             m_dragController->MoveSizeEnd();
         }
-        ReloadWorkAreas();
+        ReloadWorkAreas(/*forceRelayout=*/false);
         return 0;
 
     case WM_PRIV_MOVESIZESTART:

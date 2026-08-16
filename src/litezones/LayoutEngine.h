@@ -57,3 +57,4 @@ private:
 
 // Registry for custom (JSON-defined) layouts, used by Layout::Init when type == Custom.
 void SetCustomLayoutData(const GUID& uuid, const FancyZonesDataTypes::CustomLayoutData& data);
+void RemoveCustomLayoutData(const GUID& uuid);

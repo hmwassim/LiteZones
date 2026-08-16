@@ -713,3 +713,8 @@ void SetCustomLayoutData(const GUID& uuid, const FancyZonesDataTypes::CustomLayo
 {
     CustomLayouts()[uuid] = data;
 }
+
+void RemoveCustomLayoutData(const GUID& uuid)
+{
+    CustomLayouts().erase(uuid);
+}

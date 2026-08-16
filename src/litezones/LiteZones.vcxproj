@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib;dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;dwrite.lib;dwmapi.lib;ole32.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,15 +84,20 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib;dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;dwrite.lib;dwmapi.lib;ole32.lib;msimg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="AppZoneHistory.cpp" />
+    <ClCompile Include="AppliedLayouts.cpp" />
     <ClCompile Include="Colors.cpp" />
+    <ClCompile Include="CustomLayouts.cpp" />
     <ClCompile Include="DragController.cpp" />
+    <ClCompile Include="EditorCanvas.cpp" />
+    <ClCompile Include="EditorWindow.cpp" />
     <ClCompile Include="FileWatcher.cpp" />
+    <ClCompile Include="GridData.cpp" />
     <ClCompile Include="HighlightedZones.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="json.cpp" />
@@ -115,9 +120,15 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="AppZoneHistory.h" />
+    <ClInclude Include="AppliedLayouts.h" />
+    <ClInclude Include="CanvasMath.h" />
     <ClInclude Include="Colors.h" />
+    <ClInclude Include="CustomLayouts.h" />
     <ClInclude Include="DragController.h" />
+    <ClInclude Include="EditorCanvas.h" />
+    <ClInclude Include="EditorWindow.h" />
     <ClInclude Include="FileWatcher.h" />
+    <ClInclude Include="GridData.h" />
     <ClInclude Include="HighlightedZones.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="json.h" />

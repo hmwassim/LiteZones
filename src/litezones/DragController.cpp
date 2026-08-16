@@ -19,8 +19,10 @@ DragController::~DragController()
 
 bool DragController::IsDraggingEnabled() const
 {
-    // Shift toggles dragging unless the secondary mouse button is held instead.
-    const bool toggled = m_shiftPressed != m_secondaryMouse;
+    // Shift gates snapping unless the secondary mouse button is held instead.
+    // The secondary mouse only participates when mouseSwitch is enabled.
+    const bool secondaryHeld = Settings::instance().data.mouseSwitch ? m_secondaryMouse : false;
+    const bool toggled = m_shiftPressed != secondaryHeld;
     return Settings::instance().data.shiftDrag ? toggled : !toggled;
 }
 
@@ -28,7 +30,6 @@ bool DragController::IsSelectManyZonesState() const
 {
     return m_ctrlPressed || m_middleMouse;
 }
-
 void DragController::MoveSizeStart(HWND window)
 {
     if (m_draggingWindow)
@@ -66,6 +67,8 @@ void DragController::MoveSizeUpdate()
     GetCursorPos(&cursor);
 
     const bool isSnapping = IsDraggingEnabled();
+    SwitchSnappingMode(isSnapping);
+
     if (isSnapping)
     {
         WorkArea* workArea = WorkAreaContaining(cursor, m_draggingWindow);
@@ -96,8 +99,6 @@ void DragController::MoveSizeUpdate()
             }
         }
     }
-
-    SwitchSnappingMode(isSnapping);
 }
 
 void DragController::MoveSizeEnd()
@@ -168,24 +169,19 @@ void DragController::OnKeyStateChanged(UINT vk, bool pressed)
 
 void DragController::OnMouseButtonChanged(UINT button, bool down)
 {
-    if (!down)
-    {
-        return;
-    }
-
     if (button == VK_RBUTTON)
     {
-        m_secondaryMouse = !m_secondaryMouse;
+        m_secondaryMouse = down;
     }
     else if (button == VK_MBUTTON)
     {
         if (Settings::instance().data.mouseMiddleClickSpanningMultipleZones)
         {
-            m_middleMouse = !m_middleMouse;
+            m_middleMouse = down;
         }
         else
         {
-            m_secondaryMouse = !m_secondaryMouse;
+            m_secondaryMouse = down;
         }
     }
     else
