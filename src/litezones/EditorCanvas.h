@@ -51,4 +51,12 @@ namespace EditorCanvas
     // Callback fired just before a committed edit mutates the model.
     // Used by EditorWindow to snapshot undo state.
     void SetOnBeforeEdit(HWND hwnd, std::function<void()> callback);
+
+    // Returns true if the canvas has an active mouse gesture (resizer drag,
+    // zone move/resize, or zone draw).
+    bool IsDragging(HWND hwnd);
+
+    // Reverts the in-progress gesture (if any) without committing it.
+    // Returns true if an operation was cancelled.
+    bool CancelActiveOperation(HWND hwnd);
 }
