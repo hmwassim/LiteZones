@@ -10,6 +10,12 @@
 #include <limits>
 #include <optional>
 
+// Forward-declare so the anonymous namespace's CanvasProc can call it.
+namespace EditorCanvas
+{
+    bool CancelActiveOperation(HWND hwnd);
+}
+
 namespace
 {
     constexpr wchar_t kCanvasClassName[] = L"LiteZonesEditorCanvas";
@@ -46,12 +52,27 @@ namespace
         POINT canvasDragAnchor{};
         RECT canvasDrawRect{};
         bool canvasDrawing = false;
+
+        // Pre-drag snapshot for grid resizer cancel-revert.
+        FancyZonesDataTypes::GridLayoutInfo gridSnapshot{};
+
+        // Callback fired on every committed edit (drag-end, split, merge, delete).
+        std::function<void()> onEdited;
     };
 
     CanvasView& View()
     {
         static CanvasView view;
         return view;
+    }
+
+    void NotifyEdited()
+    {
+        CanvasView& view = View();
+        if (view.onEdited)
+        {
+            view.onEdited();
+        }
     }
 
     float ComputeScale(const CanvasView& view, int clientWidth, int clientHeight)
@@ -206,6 +227,43 @@ namespace
         return CanvasMath::ClampToCanvas(rect, view.virtualWidth, view.virtualHeight);
     }
 
+    int FindResizerForEdge(const CanvasView& view, int zoneIndex, bool horizontal, bool positiveSide)
+    {
+        if (!view.grid || zoneIndex < 0)
+        {
+            return -1;
+        }
+        const auto& zones = view.grid->Zones();
+        if (zoneIndex >= static_cast<int>(zones.size()))
+        {
+            return -1;
+        }
+        const auto& zone = zones[zoneIndex];
+        const int edgePos = horizontal
+                                ? (positiveSide ? zone.top : zone.bottom)
+                                : (positiveSide ? zone.left : zone.right);
+
+        for (int i = 0; i < static_cast<int>(view.grid->Resizers().size()); ++i)
+        {
+            const auto& resizer = view.grid->Resizers()[i];
+            const GridData::Orientation expected = horizontal ? GridData::Orientation::Horizontal : GridData::Orientation::Vertical;
+            if (resizer.orientation != expected)
+            {
+                continue;
+            }
+            if (view.grid->ResizerPosition(i) != edgePos)
+            {
+                continue;
+            }
+            const auto& sideIndices = positiveSide ? resizer.positiveSideIndices : resizer.negativeSideIndices;
+            if (std::find(sideIndices.begin(), sideIndices.end(), zoneIndex) != sideIndices.end())
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     RECT ResizeRect(const RECT& original, int handle, int dx, int dy)
     {
         return CanvasMath::Resize(original, static_cast<CanvasMath::Handle>(handle), dx, dy);
@@ -218,6 +276,31 @@ namespace
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, color);
         DrawTextW(dc, number, -1, const_cast<RECT*>(&rect), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    }
+
+    void DrawZoneLabel(HDC dc, const RECT& screenRect, int index, int pixelW, int pixelH, COLORREF color)
+    {
+        SetBkMode(dc, TRANSPARENT);
+        SetTextColor(dc, color);
+
+        wchar_t dim[32]{};
+        swprintf_s(dim, L"%d\u00D7%d", pixelW, pixelH);
+
+        if (index < 0)
+        {
+            DrawTextW(dc, dim, -1, const_cast<RECT*>(&screenRect), DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            return;
+        }
+
+        const int midY = (screenRect.top + screenRect.bottom) / 2;
+
+        wchar_t num[16]{};
+        wsprintfW(num, L"%d", index);
+        RECT topHalf{ screenRect.left, screenRect.top, screenRect.right, midY };
+        DrawTextW(dc, num, -1, &topHalf, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+        RECT botHalf{ screenRect.left, midY, screenRect.right, screenRect.bottom };
+        DrawTextW(dc, dim, -1, &botHalf, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
 
     void DrawView(HWND hwnd, HDC dc)
@@ -305,7 +388,9 @@ namespace
             HBRUSH frameBrush = selected ? highlightBrush : borderBrush;
             FrameRect(dc, &rect, frameBrush);
 
-            DrawTextCenter(dc, rect, zone.index, colors.numberColor);
+            const int pixW = zone.rect.right - zone.rect.left;
+            const int pixH = zone.rect.bottom - zone.rect.top;
+            DrawZoneLabel(dc, rect, zone.index, pixW, pixH, colors.numberColor);
         }
 
         if (view.mode == EditorCanvas::Mode::CanvasEdit && view.canvasModel &&
@@ -337,6 +422,12 @@ namespace
                 offsetY + static_cast<int>(static_cast<float>(rr.bottom) * scale)
             };
             FrameRect(dc, &drawRect, highlightBrush);
+            const int pixW = rr.right - rr.left;
+            const int pixH = rr.bottom - rr.top;
+            if (pixW > 0 && pixH > 0)
+            {
+                DrawZoneLabel(dc, drawRect, -1, pixW, pixH, colors.numberColor);
+            }
         }
 
         if (view.mode == EditorCanvas::Mode::GridEdit && view.grid)
@@ -405,6 +496,7 @@ namespace
             {
                 view.canvasModel->zones.erase(view.canvasModel->zones.begin() + view.selectedCanvasZone);
                 view.selectedCanvasZone = -1;
+                NotifyEdited();
                 InvalidateRect(hwnd, nullptr, TRUE);
             }
             return;
@@ -442,6 +534,7 @@ namespace
             {
                 view.grid->Split2x2(splitZone);
                 view.selectedZones = { splitZone };
+                NotifyEdited();
                 InvalidateRect(hwnd, nullptr, TRUE);
             }
             break;
@@ -450,6 +543,7 @@ namespace
             {
                 view.grid->DoMerge(view.selectedZones);
                 view.selectedZones.clear();
+                NotifyEdited();
                 InvalidateRect(hwnd, nullptr, TRUE);
             }
             break;
@@ -538,11 +632,13 @@ namespace
 
             if (view.mode == EditorCanvas::Mode::GridEdit && view.grid)
             {
+                SetFocus(hwnd);
                 const int resizer = HitTestResizer(view, pt);
                 if (resizer >= 0)
                 {
                     view.dragResizer = resizer;
                     view.dragLastMultiplier = MultiplierFromVirtual(view, pt, view.grid->Resizers()[static_cast<size_t>(resizer)].orientation);
+                    view.gridSnapshot = view.grid->Model();
                     SetCapture(hwnd);
                 }
                 else
@@ -652,6 +748,7 @@ namespace
                     {
                         ReleaseCapture();
                     }
+                    NotifyEdited();
                     InvalidateRect(hwnd, nullptr, TRUE);
                 }
                 else if (view.canvasInteraction == CanvasInteraction::Move || view.canvasInteraction == CanvasInteraction::Resize)
@@ -661,6 +758,7 @@ namespace
                     {
                         ReleaseCapture();
                     }
+                    NotifyEdited();
                 }
                 return 0;
             }
@@ -669,6 +767,7 @@ namespace
             {
                 view.dragResizer = -1;
                 ReleaseCapture();
+                NotifyEdited();
             }
             return 0;
         }
@@ -682,6 +781,7 @@ namespace
                 {
                     view.grid->Split2x2(zone);
                     view.selectedZones = { zone };
+                    NotifyEdited();
                     InvalidateRect(hwnd, nullptr, TRUE);
                 }
             }
@@ -696,6 +796,76 @@ namespace
             return 0;
 
         case WM_KEYDOWN:
+            if (wParam == VK_ESCAPE)
+            {
+                if (EditorCanvas::CancelActiveOperation(hwnd))
+                {
+                    return 0;
+                }
+            }
+            if (wParam == VK_UP || wParam == VK_DOWN || wParam == VK_LEFT || wParam == VK_RIGHT)
+            {
+                if (EditorCanvas::IsDragging(hwnd))
+                {
+                    break;
+                }
+                if (view.mode == EditorCanvas::Mode::CanvasEdit && view.canvasModel &&
+                    view.selectedCanvasZone >= 0 && view.selectedCanvasZone < static_cast<int>(view.canvasModel->zones.size()))
+                {
+                    auto& zone = view.canvasModel->zones[static_cast<size_t>(view.selectedCanvasZone)];
+                    switch (wParam)
+                    {
+                    case VK_UP:    zone.y -= 1; zone.height += 1; break;
+                    case VK_DOWN:  zone.height += 1; break;
+                    case VK_LEFT:  zone.x -= 1; zone.width += 1; break;
+                    case VK_RIGHT: zone.width += 1; break;
+                    }
+                    zone.width = std::max(1, zone.width);
+                    zone.height = std::max(1, zone.height);
+                    RECT rect{ zone.x, zone.y, zone.x + zone.width, zone.y + zone.height };
+                    ClampToCanvas(rect, view);
+                    zone.x = rect.left;
+                    zone.y = rect.top;
+                    zone.width = rect.right - rect.left;
+                    zone.height = rect.bottom - rect.top;
+                    NotifyEdited();
+                    InvalidateRect(hwnd, nullptr, TRUE);
+                    return 0;
+                }
+                if (view.mode == EditorCanvas::Mode::GridEdit && view.grid &&
+                    view.selectedZones.size() == 1)
+                {
+                    const int zoneIndex = view.selectedZones[0];
+                    int resizerIndex = -1;
+                    int delta = 0;
+                    switch (wParam)
+                    {
+                    case VK_UP:
+                        resizerIndex = FindResizerForEdge(view, zoneIndex, true, true);
+                        delta = -GridData::Multiplier / view.virtualHeight;
+                        break;
+                    case VK_DOWN:
+                        resizerIndex = FindResizerForEdge(view, zoneIndex, true, false);
+                        delta = GridData::Multiplier / view.virtualHeight;
+                        break;
+                    case VK_LEFT:
+                        resizerIndex = FindResizerForEdge(view, zoneIndex, false, true);
+                        delta = -GridData::Multiplier / view.virtualWidth;
+                        break;
+                    case VK_RIGHT:
+                        resizerIndex = FindResizerForEdge(view, zoneIndex, false, false);
+                        delta = GridData::Multiplier / view.virtualWidth;
+                        break;
+                    }
+                    if (resizerIndex >= 0 && view.grid->CanDrag(resizerIndex, delta))
+                    {
+                        view.grid->Drag(resizerIndex, delta);
+                        NotifyEdited();
+                        InvalidateRect(hwnd, nullptr, TRUE);
+                    }
+                    return 0;
+                }
+            }
             if (view.mode == EditorCanvas::Mode::CanvasEdit && view.canvasModel &&
                 (wParam == VK_DELETE || wParam == VK_BACK))
             {
@@ -703,6 +873,7 @@ namespace
                 {
                     view.canvasModel->zones.erase(view.canvasModel->zones.begin() + view.selectedCanvasZone);
                     view.selectedCanvasZone = -1;
+                    NotifyEdited();
                     InvalidateRect(hwnd, nullptr, TRUE);
                 }
                 return 0;
@@ -846,5 +1017,94 @@ namespace EditorCanvas
     POINT ClientToVirtual(HWND hwnd, POINT clientPt)
     {
         return ClientToVirtualPoint(hwnd, clientPt);
+    }
+
+    void SetOnEdited(HWND hwnd, std::function<void()> callback)
+    {
+        (void)hwnd;
+        CanvasView& view = View();
+        view.onEdited = std::move(callback);
+    }
+
+    void SetOnBeforeEdit(HWND hwnd, std::function<void()> callback)
+    {
+        (void)hwnd;
+        CanvasView& view = View();
+        view.onBeforeEdit = std::move(callback);
+    }
+
+    bool IsDragging(HWND hwnd)
+    {
+        (void)hwnd;
+        CanvasView& view = View();
+        if (view.dragResizer >= 0)
+        {
+            return true;
+        }
+        if (view.canvasInteraction != CanvasInteraction::None)
+        {
+            return true;
+        }
+        if (view.canvasDrawing)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    bool CancelActiveOperation(HWND hwnd)
+    {
+        CanvasView& view = View();
+        bool cancelled = false;
+
+        // Grid resizer drag: restore snapshot.
+        if (view.dragResizer >= 0 && view.grid)
+        {
+            view.grid->Model() = view.gridSnapshot;
+            view.grid->Reset();
+            view.dragResizer = -1;
+            if (GetCapture() == hwnd)
+            {
+                ReleaseCapture();
+            }
+            cancelled = true;
+        }
+
+        // Canvas move/resize: restore origin position.
+        if (view.canvasInteraction == CanvasInteraction::Move || view.canvasInteraction == CanvasInteraction::Resize)
+        {
+            if (view.canvasModel && view.selectedCanvasZone >= 0 &&
+                view.selectedCanvasZone < static_cast<int>(view.canvasModel->zones.size()))
+            {
+                auto& zone = view.canvasModel->zones[static_cast<size_t>(view.selectedCanvasZone)];
+                zone.x = view.canvasDragOrigin.left;
+                zone.y = view.canvasDragOrigin.top;
+                zone.width = view.canvasDragOrigin.right - view.canvasDragOrigin.left;
+                zone.height = view.canvasDragOrigin.bottom - view.canvasDragOrigin.top;
+            }
+            view.canvasInteraction = CanvasInteraction::None;
+            if (GetCapture() == hwnd)
+            {
+                ReleaseCapture();
+            }
+            cancelled = true;
+        }
+        // Canvas draw: discard in-progress draw rect.
+        else if (view.canvasInteraction == CanvasInteraction::Draw && view.canvasDrawing)
+        {
+            view.canvasDrawing = false;
+            view.canvasInteraction = CanvasInteraction::None;
+            if (GetCapture() == hwnd)
+            {
+                ReleaseCapture();
+            }
+            cancelled = true;
+        }
+
+        if (cancelled)
+        {
+            InvalidateRect(hwnd, nullptr, TRUE);
+        }
+        return cancelled;
     }
 }

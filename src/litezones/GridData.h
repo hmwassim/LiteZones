@@ -64,6 +64,13 @@ namespace GridData
         // Position of a resizer in Multiplier space (-1 when invalid).
         int ResizerPosition(int resizerIndex) const;
 
+        // Direct access to the underlying model (for snapshot/restore).
+        FancyZonesDataTypes::GridLayoutInfo& Model() { return *m_model; }
+        const FancyZonesDataTypes::GridLayoutInfo& Model() const { return *m_model; }
+
+        // Rebuild zones/resizers from the model after an external restore.
+        void Reset() { FromModel(); }
+
         bool CanSplit(int zoneIndex, int position, Orientation orientation) const;
         void Split(int zoneIndex, int position, Orientation orientation);
         // Splits a zone into a 2x2 group; each direction that cannot split is skipped.

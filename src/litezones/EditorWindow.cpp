@@ -229,6 +229,8 @@ bool EditorWindow::CreateControls()
         return false;
     }
 
+    EditorCanvas::SetOnEdited(m_canvas, [this]() { NotifyChanged(); });
+
     const auto createButton = [this, font](ControlId id, const wchar_t* text) {
         return CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
                                0, 0, 0, 0, m_hwnd, reinterpret_cast<HMENU>(id), m_hInstance, nullptr);

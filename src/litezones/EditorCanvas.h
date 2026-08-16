@@ -4,6 +4,7 @@
 
 #include <windows.h>
 
+#include <functional>
 #include <vector>
 
 // Child window that renders zones and supports in-place grid editing. Zones are
@@ -42,4 +43,8 @@ namespace EditorCanvas
 
     // Client pixel -> virtual-space point (inverse of the letterbox mapping).
     POINT ClientToVirtual(HWND hwnd, POINT clientPt);
+
+    // Callback fired on every committed edit (drag-end, split, merge, delete).
+    // Used by EditorWindow to track dirty state for mouse-driven changes.
+    void SetOnEdited(HWND hwnd, std::function<void()> callback);
 }
