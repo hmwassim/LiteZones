@@ -58,6 +58,9 @@ namespace
 
         // Callback fired on every committed edit (drag-end, split, merge, delete).
         std::function<void()> onEdited;
+
+        // Callback fired just before a committed edit mutates the model.
+        std::function<void()> onBeforeEdit;
     };
 
     CanvasView& View()
@@ -72,6 +75,15 @@ namespace
         if (view.onEdited)
         {
             view.onEdited();
+        }
+    }
+
+    void NotifyBeforeEdit()
+    {
+        CanvasView& view = View();
+        if (view.onBeforeEdit)
+        {
+            view.onBeforeEdit();
         }
     }
 
@@ -494,6 +506,7 @@ namespace
             if (selected == 1 && view.canvasModel && view.selectedCanvasZone >= 0 &&
                 view.selectedCanvasZone < static_cast<int>(view.canvasModel->zones.size()))
             {
+                NotifyBeforeEdit();
                 view.canvasModel->zones.erase(view.canvasModel->zones.begin() + view.selectedCanvasZone);
                 view.selectedCanvasZone = -1;
                 NotifyEdited();
@@ -532,6 +545,7 @@ namespace
         case 1:
             if (canSplit)
             {
+                NotifyBeforeEdit();
                 view.grid->Split2x2(splitZone);
                 view.selectedZones = { splitZone };
                 NotifyEdited();
@@ -541,6 +555,7 @@ namespace
         case 2:
             if (canMerge)
             {
+                NotifyBeforeEdit();
                 view.grid->DoMerge(view.selectedZones);
                 view.selectedZones.clear();
                 NotifyEdited();
@@ -592,6 +607,7 @@ namespace
                 const int zone = HitTestCanvasZone(view, pt);
                 if (handle != CanvasMath::None && view.selectedCanvasZone >= 0)
                 {
+                    NotifyBeforeEdit();
                     view.canvasInteraction = CanvasInteraction::Resize;
                     view.canvasResizeHandle = handle;
                     view.canvasDragAnchor = pt;
@@ -605,6 +621,7 @@ namespace
                 }
                 else if (zone >= 0)
                 {
+                    NotifyBeforeEdit();
                     view.selectedCanvasZone = zone;
                     view.canvasInteraction = CanvasInteraction::Move;
                     view.canvasDragAnchor = pt;
@@ -636,6 +653,7 @@ namespace
                 const int resizer = HitTestResizer(view, pt);
                 if (resizer >= 0)
                 {
+                    NotifyBeforeEdit();
                     view.dragResizer = resizer;
                     view.dragLastMultiplier = MultiplierFromVirtual(view, pt, view.grid->Resizers()[static_cast<size_t>(resizer)].orientation);
                     view.gridSnapshot = view.grid->Model();
@@ -737,6 +755,7 @@ namespace
                     view.canvasDrawing = false;
                     if (rect.right - rect.left >= CanvasMath::MinZoneSize && rect.bottom - rect.top >= CanvasMath::MinZoneSize)
                     {
+                        NotifyBeforeEdit();
                         ClampToCanvas(rect, view);
                         view.canvasModel->zones.push_back(FancyZonesDataTypes::CanvasLayoutInfo::Rect{
                             rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
@@ -779,6 +798,7 @@ namespace
                 const int zone = HitTestZone(view, pt);
                 if (zone >= 0)
                 {
+                    NotifyBeforeEdit();
                     view.grid->Split2x2(zone);
                     view.selectedZones = { zone };
                     NotifyEdited();
@@ -812,6 +832,7 @@ namespace
                 if (view.mode == EditorCanvas::Mode::CanvasEdit && view.canvasModel &&
                     view.selectedCanvasZone >= 0 && view.selectedCanvasZone < static_cast<int>(view.canvasModel->zones.size()))
                 {
+                    NotifyBeforeEdit();
                     auto& zone = view.canvasModel->zones[static_cast<size_t>(view.selectedCanvasZone)];
                     switch (wParam)
                     {
@@ -859,6 +880,7 @@ namespace
                     }
                     if (resizerIndex >= 0 && view.grid->CanDrag(resizerIndex, delta))
                     {
+                        NotifyBeforeEdit();
                         view.grid->Drag(resizerIndex, delta);
                         NotifyEdited();
                         InvalidateRect(hwnd, nullptr, TRUE);
@@ -871,6 +893,7 @@ namespace
             {
                 if (view.selectedCanvasZone >= 0 && view.selectedCanvasZone < static_cast<int>(view.canvasModel->zones.size()))
                 {
+                    NotifyBeforeEdit();
                     view.canvasModel->zones.erase(view.canvasModel->zones.begin() + view.selectedCanvasZone);
                     view.selectedCanvasZone = -1;
                     NotifyEdited();

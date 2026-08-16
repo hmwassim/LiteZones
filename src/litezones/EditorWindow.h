@@ -50,8 +50,6 @@ private:
         kBtnDuplicate = 5004,
         kBtnDelete = 5005,
         kBtnRename = 5006,
-        kBtnApply = 5007,
-        kBtnApplyAll = 5008,
         kEditSpacing = 5009,
         kEditZoneCount = 5010,
     };
@@ -60,6 +58,7 @@ private:
     LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     bool CreateControls();
+    void CreateMenuBar();
     void LayoutControls();
     void PopulateLayoutList();
     void PopulateMonitorCombo();
@@ -76,14 +75,19 @@ private:
     void OnDuplicate();
     void OnDelete();
     void OnRename();
+    void OnSave();
     void OnApply();
     void OnApplyAll();
+    void OnUndo();
+    void OnAbout();
 
     int SelectedListIndex() const;
     bool BuildApplyLayout(int listIndex, LayoutData& out) const;
     bool SelectedMonitorRect(RECT& out) const;
     FancyZonesDataTypes::CustomLayoutData* EnsureWorkingCopy(const GUID& uuid);
     void PersistAllWorkingCopies();
+    void PushUndoSnapshot();
+    void SelectActiveLayout();
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_notifyWindow = nullptr;
@@ -104,4 +108,16 @@ private:
     std::vector<RECT> m_deviceRects;
     std::map<GUID, FancyZonesDataTypes::CustomLayoutData, Util::GuidLess> m_workingCopies;
     std::function<void()> m_onChanged;
+    bool m_dirty = false;
+    HMENU m_menuFile = nullptr;
+    HMENU m_menuEdit = nullptr;
+    bool m_initialSelectionDone = false;
+
+    struct UndoEntry
+    {
+        GUID uuid = GUID_NULL;
+        std::wstring name;
+        FancyZonesDataTypes::CustomLayoutData data;
+    };
+    std::vector<UndoEntry> m_undoStack;
 };

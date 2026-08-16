@@ -47,4 +47,8 @@ namespace EditorCanvas
     // Callback fired on every committed edit (drag-end, split, merge, delete).
     // Used by EditorWindow to track dirty state for mouse-driven changes.
     void SetOnEdited(HWND hwnd, std::function<void()> callback);
+
+    // Callback fired just before a committed edit mutates the model.
+    // Used by EditorWindow to snapshot undo state.
+    void SetOnBeforeEdit(HWND hwnd, std::function<void()> callback);
 }

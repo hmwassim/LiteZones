@@ -160,12 +160,13 @@ bool EditorWindow::Create()
     wc.hIcon = LoadIconW(m_hInstance, MAKEINTRESOURCE(IDI_APP));
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wc.lpszClassName = kEditorClassName;
+    wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
     if (RegisterClassExW(&wc) == 0 && GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
     {
         return false;
     }
 
-    m_hwnd = CreateWindowExW(0, kEditorClassName, kWindowTitle, WS_OVERLAPPEDWINDOW,
+    m_hwnd = CreateWindowExW(WS_CLIPCHILDREN, kEditorClassName, kWindowTitle, WS_OVERLAPPEDWINDOW,
                              CW_USEDEFAULT, CW_USEDEFAULT, 900, 620, nullptr, nullptr, m_hInstance, this);
     if (!m_hwnd)
     {
@@ -176,8 +177,10 @@ bool EditorWindow::Create()
     {
         return false;
     }
+    CreateMenuBar();
     PopulateMonitorCombo();
     PopulateLayoutList();
+    SelectActiveLayout();
     return true;
 }
 
@@ -230,6 +233,7 @@ bool EditorWindow::CreateControls()
     }
 
     EditorCanvas::SetOnEdited(m_canvas, [this]() { NotifyChanged(); });
+    EditorCanvas::SetOnBeforeEdit(m_canvas, [this]() { PushUndoSnapshot(); });
 
     const auto createButton = [this, font](ControlId id, const wchar_t* text) {
         return CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
@@ -240,8 +244,6 @@ bool EditorWindow::CreateControls()
         createButton(kBtnDuplicate, L"Duplicate"),
         createButton(kBtnDelete, L"Delete"),
         createButton(kBtnRename, L"Rename..."),
-        createButton(kBtnApply, L"Apply"),
-        createButton(kBtnApplyAll, L"Apply to All"),
     };
 
     for (HWND control : { m_listBox, m_staticMonitor, m_monitorCombo, m_staticSpacing, m_spacingEdit,
@@ -276,8 +278,6 @@ void EditorWindow::LayoutControls()
     MoveWindow(m_spacingEdit, kLeftPanelWidth + 296, 10, 44, 24, TRUE);
     MoveWindow(m_staticZones, kLeftPanelWidth + 348, 13, 40, 16, TRUE);
     MoveWindow(m_zoneCountEdit, kLeftPanelWidth + 390, 10, 40, 24, TRUE);
-    MoveWindow(GetDlgItem(m_hwnd, kBtnApply), kLeftPanelWidth + 436, 10, 68, 24, TRUE);
-    MoveWindow(GetDlgItem(m_hwnd, kBtnApplyAll), kLeftPanelWidth + 510, 10, 92, 24, TRUE);
 
     const int buttonWidth = (kLeftPanelWidth - 16 - 8) / 2;
     MoveWindow(GetDlgItem(m_hwnd, kBtnNew), 8, height - 60, buttonWidth, 24, TRUE);
@@ -381,8 +381,6 @@ void EditorWindow::OnSelectionChanged()
         EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), FALSE);
         EnableWindow(GetDlgItem(m_hwnd, kBtnDelete), FALSE);
         EnableWindow(GetDlgItem(m_hwnd, kBtnRename), FALSE);
-        EnableWindow(GetDlgItem(m_hwnd, kBtnApply), FALSE);
-        EnableWindow(GetDlgItem(m_hwnd, kBtnApplyAll), FALSE);
         if (m_spacingEdit)
         {
             EnableWindow(m_spacingEdit, FALSE);
@@ -404,8 +402,6 @@ void EditorWindow::OnSelectionChanged()
     EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), TRUE);
     EnableWindow(GetDlgItem(m_hwnd, kBtnDelete), isCustom);
     EnableWindow(GetDlgItem(m_hwnd, kBtnRename), isCustom);
-    EnableWindow(GetDlgItem(m_hwnd, kBtnApply), TRUE);
-    EnableWindow(GetDlgItem(m_hwnd, kBtnApplyAll), TRUE);
 
     UpdateSpacingControl();
 
@@ -668,15 +664,9 @@ FancyZonesDataTypes::CustomLayoutData* EditorWindow::EnsureWorkingCopy(const GUI
 
 void EditorWindow::PersistAllWorkingCopies()
 {
-    bool persisted = false;
     for (const auto& [uuid, data] : m_workingCopies)
     {
         CustomLayouts::instance().AddLayout(uuid, data);
-        persisted = true;
-    }
-    if (persisted)
-    {
-        NotifyChanged();
     }
 }
 
@@ -1000,6 +990,156 @@ void EditorWindow::OnApplyAll()
     NotifyChanged();
 }
 
+void EditorWindow::CreateMenuBar()
+{
+    m_menuFile = CreateMenu();
+    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_SAVE, L"&Save\tCtrl+S");
+    AppendMenuW(m_menuFile, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_APPLY, L"Apply &to Monitor\tCtrl+Enter");
+    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_APPLYALL, L"Apply to &All Monitors\tCtrl+Shift+Enter");
+    AppendMenuW(m_menuFile, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_CLOSE, L"&Close\tAlt+F4");
+
+    m_menuEdit = CreateMenu();
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_UNDO, L"&Undo\tCtrl+Z");
+
+    HMENU menuHelp = CreateMenu();
+    AppendMenuW(menuHelp, MF_STRING, IDM_HELP_ABOUT, L"&About LiteZones");
+
+    HMENU menuBar = CreateMenu();
+    AppendMenuW(menuBar, MF_POPUP, reinterpret_cast<LPARAM>(m_menuFile), L"&File");
+    AppendMenuW(menuBar, MF_POPUP, reinterpret_cast<LPARAM>(m_menuEdit), L"&Edit");
+    AppendMenuW(menuBar, MF_POPUP, reinterpret_cast<LPARAM>(menuHelp), L"&Help");
+
+    SetMenu(m_hwnd, menuBar);
+}
+
+void EditorWindow::OnSave()
+{
+    const int listIndex = SelectedListIndex();
+    if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
+    {
+        if (FancyZonesDataTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
+        {
+            CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
+        }
+    }
+    PersistAllWorkingCopies();
+    NotifyChanged();
+}
+
+void EditorWindow::OnUndo()
+{
+    if (m_undoStack.empty())
+    {
+        return;
+    }
+
+    const UndoEntry entry = m_undoStack.back();
+    m_undoStack.pop_back();
+
+    m_workingCopies[entry.uuid] = entry.data;
+    CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+
+    for (size_t i = 0; i < m_entries.size(); ++i)
+    {
+        if (!m_entries[i].isTemplate && IsEqualGUID(m_entries[i].uuid, entry.uuid))
+        {
+            SendMessageW(m_listBox, LB_SETCURSEL, static_cast<WPARAM>(i), 0);
+            OnSelectionChanged();
+            break;
+        }
+    }
+    NotifyChanged();
+}
+
+void EditorWindow::OnAbout()
+{
+    MessageBoxW(m_hwnd,
+                L"LiteZones - Layout Editor\n\n"
+                L"Create and manage custom window layouts.\n"
+                L"Drag resizers to resize zones.\n"
+                L"Double-click to split, right-click to merge.\n"
+                L"Ctrl+Z to undo changes.",
+                L"About LiteZones",
+                MB_OK | MB_ICONINFORMATION);
+}
+
+void EditorWindow::PushUndoSnapshot()
+{
+    const int index = SelectedListIndex();
+    if (index < 0 || index >= static_cast<int>(m_entries.size()))
+    {
+        return;
+    }
+    const ListEntry& entry = m_entries[static_cast<size_t>(index)];
+    if (entry.isTemplate)
+    {
+        return;
+    }
+    const auto* data = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+    if (!data)
+    {
+        return;
+    }
+
+    UndoEntry undo;
+    undo.uuid = entry.uuid;
+    undo.name = entry.name;
+    undo.data = *data;
+    m_undoStack.push_back(std::move(undo));
+
+    constexpr size_t kMaxUndo = 50;
+    if (m_undoStack.size() > kMaxUndo)
+    {
+        m_undoStack.erase(m_undoStack.begin());
+    }
+}
+
+void EditorWindow::SelectActiveLayout()
+{
+    const std::vector<MonitorUtils::MonitorRect> monitors = MonitorUtils::GetWorkAreas(false);
+    if (monitors.empty())
+    {
+        return;
+    }
+
+    const std::wstring primaryDeviceKey = MonitorUtils::GetDeviceKey(monitors.front().first);
+
+    for (size_t i = 0; i < m_deviceKeys.size(); ++i)
+    {
+        if (m_deviceKeys[i] == primaryDeviceKey)
+        {
+            SendMessageW(m_monitorCombo, CB_SETCURSEL, static_cast<WPARAM>(i), 0);
+
+            const auto layoutData = AppliedLayouts::instance().GetDeviceLayout(primaryDeviceKey);
+            if (layoutData.has_value())
+            {
+                const LayoutData& applied = *layoutData;
+                for (size_t j = 0; j < m_entries.size(); ++j)
+                {
+                    bool match = false;
+                    if (applied.type == FancyZonesDataTypes::ZoneSetLayoutType::Custom)
+                    {
+                        match = !m_entries[j].isTemplate && IsEqualGUID(m_entries[j].uuid, applied.uuid);
+                    }
+                    else
+                    {
+                        match = m_entries[j].isTemplate && m_entries[j].type == applied.type;
+                    }
+                    if (match)
+                    {
+                        SendMessageW(m_listBox, LB_SETCURSEL, static_cast<WPARAM>(j), 0);
+                        OnSelectionChanged();
+                        return;
+                    }
+                }
+            }
+            return;
+        }
+    }
+}
+
 LRESULT CALLBACK EditorWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     EditorWindow* self = reinterpret_cast<EditorWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -1028,8 +1168,8 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     case WM_GETMINMAXINFO:
     {
         auto* info = reinterpret_cast<MINMAXINFO*>(lParam);
-        info->ptMinTrackSize.x = 620;
-        info->ptMinTrackSize.y = 420;
+        info->ptMinTrackSize.x = 700;
+        info->ptMinTrackSize.y = 480;
         return 0;
     }
 
@@ -1037,6 +1177,10 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         if (wParam == VK_ESCAPE)
         {
             PostMessageW(hwnd, WM_CLOSE, 0, 0);
+        }
+        else if (wParam == 'Z' && (GetKeyState(VK_CONTROL) & 0x8000))
+        {
+            OnUndo();
         }
         return 0;
 
@@ -1067,12 +1211,6 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         case kBtnRename:
             OnRename();
             return 0;
-        case kBtnApply:
-            OnApply();
-            return 0;
-        case kBtnApplyAll:
-            OnApplyAll();
-            return 0;
         case kEditSpacing:
             if (HIWORD(wParam) == EN_CHANGE)
             {
@@ -1085,11 +1223,44 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 OnZoneCountChanged();
             }
             return 0;
+        case IDM_FILE_SAVE:
+            OnSave();
+            return 0;
+        case IDM_FILE_APPLY:
+            OnApply();
+            return 0;
+        case IDM_FILE_APPLYALL:
+            OnApplyAll();
+            return 0;
+        case IDM_FILE_CLOSE:
+            PostMessageW(hwnd, WM_CLOSE, 0, 0);
+            return 0;
+        case IDM_EDIT_UNDO:
+            OnUndo();
+            return 0;
+        case IDM_HELP_ABOUT:
+            OnAbout();
+            return 0;
         }
         break;
 
     case WM_CLOSE:
-        PersistAllWorkingCopies();
+        if (m_dirty)
+        {
+            const int result = MessageBoxW(hwnd,
+                                           L"Save changes to layouts before closing?",
+                                           L"LiteZones Editor",
+                                           MB_YESNOCANCEL | MB_ICONQUESTION);
+            if (result == IDCANCEL)
+            {
+                return 0;
+            }
+            if (result == IDYES)
+            {
+                PersistAllWorkingCopies();
+                NotifyChanged();
+            }
+        }
         DestroyWindow(hwnd);
         return 0;
 

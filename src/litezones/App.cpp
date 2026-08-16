@@ -130,12 +130,7 @@ bool App::Init()
     m_fileWatcher = std::make_unique<FileWatcher>();
     m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json", L"custom-layouts.json", L"applied-layouts.json" });
 
-    // Debug hook: set LITEZONES_OPEN_EDITOR=1 to open the layout editor on start.
-    wchar_t openEditor[2]{};
-    if (GetEnvironmentVariableW(L"LITEZONES_OPEN_EDITOR", openEditor, 2) > 0 && openEditor[0] == L'1')
-    {
-        OpenLayoutEditor();
-    }
+    OpenLayoutEditor();
     return true;
 }
 
