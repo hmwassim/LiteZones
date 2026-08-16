@@ -213,5 +213,10 @@ void ZonesOverlay::Render()
         textFormat->Release();
     }
 
-    m_renderTarget->EndDraw();
+    const HRESULT endHr = m_renderTarget->EndDraw();
+    if (endHr == D2DERR_RECREATE_TARGET)
+    {
+        m_renderTarget->Release();
+        m_renderTarget = nullptr;
+    }
 }

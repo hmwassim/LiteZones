@@ -85,6 +85,7 @@ void DragController::MoveSizeUpdate()
                 m_currentWorkArea->HideZones();
             }
             m_currentWorkArea = workArea;
+            m_currentWorkArea->ShowZones(m_highlightedZones.Zones());
         }
 
         if (m_currentWorkArea)
