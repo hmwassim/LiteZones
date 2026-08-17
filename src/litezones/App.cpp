@@ -7,6 +7,7 @@
 #include "EditorWindow.h"
 #include "FileWatcher.h"
 #include "KeyboardSnap.h"
+#include "LayoutHelpers.h"
 #include "MonitorManager.h"
 #include "Paths.h"
 #include "Settings.h"
@@ -51,10 +52,6 @@ namespace
         {
             LayoutData layout;
             layout.type = type;
-            layout.showSpacing = DefaultValues::ShowSpacing;
-            layout.spacing = DefaultValues::Spacing;
-            layout.zoneCount = DefaultValues::ZoneCount;
-            layout.sensitivityRadius = DefaultValues::SensitivityRadius;
             candidates.push_back(layout);
         }
         for (const auto& [uuid, data] : CustomLayouts::instance().AllLayouts())
@@ -279,9 +276,7 @@ void App::ReloadWorkAreas(bool forceRelayout)
         }
     }
 
-    LayoutData layout;
-    layout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
-    layout.zoneCount = DefaultValues::ZoneCount;
+    LayoutData layout = LayoutHelpers::MakeDefaultLayout();
     m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout, forceRelayout);
 }
 
@@ -291,9 +286,7 @@ void App::CycleLayoutOnMonitor()
     GetCursorPos(&pt);
     const HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTOPRIMARY);
 
-    LayoutData defaultLayout;
-    defaultLayout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
-    defaultLayout.zoneCount = DefaultValues::ZoneCount;
+    const LayoutData defaultLayout = LayoutHelpers::MakeDefaultLayout();
     const LayoutData current = LayoutResolver::Resolve(monitor, Settings::instance().data.spanZonesAcrossMonitors, defaultLayout);
 
     const std::vector<LayoutData> candidates = BuildLayoutCycleCandidates();

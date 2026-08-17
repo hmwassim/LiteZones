@@ -5,6 +5,7 @@
 #include "EditorCanvas.h"
 #include "GridData.h"
 #include "LayoutEngine.h"
+#include "LayoutHelpers.h"
 #include "MonitorManager.h"
 #include "resource.h"
 #include "util.h"
@@ -703,30 +704,7 @@ void EditorWindow::OnNewLayout()
         data.type = FancyZonesDataTypes::CustomLayoutType::Grid;
         const int r = std::max(1, result.rows);
         const int c = std::max(1, result.columns);
-        data.grid = FancyZonesDataTypes::GridLayoutInfo(r, c);
-        const int rowPct = 10000 / r;
-        const int colPct = 10000 / c;
-        for (int i = 0; i < r; ++i)
-        {
-            data.grid.rowsPercents()[i] = (i < r - 1) ? rowPct : 10000 - rowPct * (r - 1);
-        }
-        for (int i = 0; i < c; ++i)
-        {
-            data.grid.columnsPercents()[i] = (i < c - 1) ? colPct : 10000 - colPct * (c - 1);
-        }
-        int zoneIndex = 0;
-        data.grid.cellChildMap().resize(r);
-        for (int row = 0; row < r; ++row)
-        {
-            data.grid.cellChildMap()[row].resize(c);
-            for (int col = 0; col < c; ++col)
-            {
-                data.grid.cellChildMap()[row][col] = zoneIndex++;
-            }
-        }
-        data.grid.m_showSpacing = DefaultValues::ShowSpacing;
-        data.grid.m_spacing = DefaultValues::Spacing;
-        data.grid.m_sensitivityRadius = DefaultValues::SensitivityRadius;
+        data.grid = LayoutHelpers::MakeGridLayout(r, c);
     }
     else
     {
@@ -791,30 +769,7 @@ void EditorWindow::OnDuplicate()
             break;
         }
 
-        data.grid = FancyZonesDataTypes::GridLayoutInfo(rows, columns);
-        const int rowPct = 10000 / rows;
-        const int colPct = 10000 / columns;
-        for (int i = 0; i < rows; ++i)
-        {
-            data.grid.rowsPercents()[i] = (i < rows - 1) ? rowPct : 10000 - rowPct * (rows - 1);
-        }
-        for (int i = 0; i < columns; ++i)
-        {
-            data.grid.columnsPercents()[i] = (i < columns - 1) ? colPct : 10000 - colPct * (columns - 1);
-        }
-        int zoneIndex = 0;
-        data.grid.cellChildMap().resize(rows);
-        for (int row = 0; row < rows; ++row)
-        {
-            data.grid.cellChildMap()[row].resize(columns);
-            for (int col = 0; col < columns; ++col)
-            {
-                data.grid.cellChildMap()[row][col] = zoneIndex++;
-            }
-        }
-        data.grid.m_showSpacing = DefaultValues::ShowSpacing;
-        data.grid.m_spacing = DefaultValues::Spacing;
-        data.grid.m_sensitivityRadius = DefaultValues::SensitivityRadius;
+        data.grid = LayoutHelpers::MakeGridLayout(rows, columns);
 
         if (!CustomLayouts::instance().AddLayout(uuid, data))
         {

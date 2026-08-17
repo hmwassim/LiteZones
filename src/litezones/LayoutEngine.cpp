@@ -1,5 +1,6 @@
 #include "LayoutEngine.h"
 
+#include "LayoutHelpers.h"
 #include "Settings.h"
 
 #include <algorithm>
@@ -648,19 +649,7 @@ ZoneIndexSet Layout::GetCombinedZoneRange(const ZoneIndexSet& initialZones, cons
         const auto it = m_zones.find(zoneId);
         if (it != m_zones.end())
         {
-            const RECT rect = it->second.GetZoneRect();
-            if (boundingRectEmpty)
-            {
-                boundingRect = rect;
-                boundingRectEmpty = false;
-            }
-            else
-            {
-                boundingRect.left = min(boundingRect.left, rect.left);
-                boundingRect.top = min(boundingRect.top, rect.top);
-                boundingRect.right = max(boundingRect.right, rect.right);
-                boundingRect.bottom = max(boundingRect.bottom, rect.bottom);
-            }
+            LayoutHelpers::ExtendBoundingRect(boundingRect, boundingRectEmpty, it->second.GetZoneRect());
         }
     }
 
@@ -690,19 +679,7 @@ RECT Layout::GetCombinedZonesRect(const ZoneIndexSet& zones)
         const auto it = m_zones.find(id);
         if (it != m_zones.end())
         {
-            const RECT newSize = it->second.GetZoneRect();
-            if (!sizeEmpty)
-            {
-                size.left = min(size.left, newSize.left);
-                size.top = min(size.top, newSize.top);
-                size.right = max(size.right, newSize.right);
-                size.bottom = max(size.bottom, newSize.bottom);
-            }
-            else
-            {
-                size = newSize;
-                sizeEmpty = false;
-            }
+            LayoutHelpers::ExtendBoundingRect(size, sizeEmpty, it->second.GetZoneRect());
         }
     }
 

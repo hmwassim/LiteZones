@@ -4,7 +4,7 @@ Standalone Windows tiling window manager. Single native C++17/Win32 executable -
 
 | Metric | Value |
 |---|---|
-| Release exe | ~315 KB |
+| Release exe | ~447 KB |
 | Idle RAM | ~10 MB working set |
 | Idle CPU | 0% (event-driven) |
 | Dependencies | Zero (static `/MT`, hand-rolled JSON) |

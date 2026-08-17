@@ -9,23 +9,26 @@ namespace
 {
     const Json kNullJson;
 
-    const wchar_t* g_parsePos = nullptr;
-    bool g_parseFailed = false;
-
-    void SkipWhitespace()
+    struct ParseContext
     {
-        while (*g_parsePos == L' ' || *g_parsePos == L'\t' || *g_parsePos == L'\r' || *g_parsePos == L'\n')
+        const wchar_t* pos = nullptr;
+        bool failed = false;
+    };
+
+    void SkipWhitespace(ParseContext& ctx)
+    {
+        while (*ctx.pos == L' ' || *ctx.pos == L'\t' || *ctx.pos == L'\r' || *ctx.pos == L'\n')
         {
-            ++g_parsePos;
+            ++ctx.pos;
         }
     }
 
-    bool ParseHex4(unsigned& value)
+    bool ParseHex4(ParseContext& ctx, unsigned& value)
     {
         value = 0;
         for (int i = 0; i < 4; ++i)
         {
-            const wchar_t c = *g_parsePos;
+            const wchar_t c = *ctx.pos;
             unsigned digit;
             if (c >= L'0' && c <= L'9')
             {
@@ -44,36 +47,36 @@ namespace
                 return false;
             }
             value = (value << 4) | digit;
-            ++g_parsePos;
+            ++ctx.pos;
         }
         return true;
     }
 
-    bool ParseString(std::wstring& out)
+    bool ParseString(ParseContext& ctx, std::wstring& out)
     {
-        if (*g_parsePos != L'"')
+        if (*ctx.pos != L'"')
         {
             return false;
         }
-        ++g_parsePos;
+        ++ctx.pos;
 
         out.clear();
         while (true)
         {
-            const wchar_t c = *g_parsePos;
+            const wchar_t c = *ctx.pos;
             if (c == L'\0')
             {
                 return false;
             }
             if (c == L'"')
             {
-                ++g_parsePos;
+                ++ctx.pos;
                 return true;
             }
             if (c == L'\\')
             {
-                ++g_parsePos;
-                const wchar_t esc = *g_parsePos;
+                ++ctx.pos;
+                const wchar_t esc = *ctx.pos;
                 switch (esc)
                 {
                 case L'"':
@@ -98,20 +101,20 @@ namespace
                     break;
                 case L'u':
                 {
-                    ++g_parsePos;
+                    ++ctx.pos;
                     unsigned code = 0;
-                    if (!ParseHex4(code))
+                    if (!ParseHex4(ctx, code))
                     {
                         return false;
                     }
                     if (code >= 0xD800 && code <= 0xDBFF)
                     {
                         // High surrogate: expect a low surrogate right after.
-                        if (g_parsePos[0] == L'\\' && g_parsePos[1] == L'u')
+                        if (ctx.pos[0] == L'\\' && ctx.pos[1] == L'u')
                         {
-                            g_parsePos += 2;
+                            ctx.pos += 2;
                             unsigned low = 0;
-                            if (!ParseHex4(low) || low < 0xDC00 || low > 0xDFFF)
+                            if (!ParseHex4(ctx, low) || low < 0xDC00 || low > 0xDFFF)
                             {
                                 return false;
                             }
@@ -127,50 +130,49 @@ namespace
                     {
                         out.push_back(static_cast<wchar_t>(code));
                     }
-                    break;
+                    continue;
                 }
                 default:
                     return false;
                 }
-                ++g_parsePos;
+                ++ctx.pos;
             }
             else
             {
                 out.push_back(c);
-                ++g_parsePos;
+                ++ctx.pos;
             }
         }
     }
 
-    Json ParseValue();
+    Json ParseValue(ParseContext& ctx);
 
-    bool ParseArray(Json& out)
+    bool ParseArray(ParseContext& ctx, Json& out)
     {
-        // g_parsePos at '['
-        ++g_parsePos;
-        SkipWhitespace();
-        if (*g_parsePos == L']')
+        ++ctx.pos;
+        SkipWhitespace(ctx);
+        if (*ctx.pos == L']')
         {
-            ++g_parsePos;
+            ++ctx.pos;
             return true;
         }
         while (true)
         {
-            const Json item = ParseValue();
-            if (g_parseFailed)
+            const Json item = ParseValue(ctx);
+            if (ctx.failed)
             {
                 return false;
             }
             out.Push(item);
-            SkipWhitespace();
-            if (*g_parsePos == L',')
+            SkipWhitespace(ctx);
+            if (*ctx.pos == L',')
             {
-                ++g_parsePos;
-                SkipWhitespace();
+                ++ctx.pos;
+                SkipWhitespace(ctx);
             }
-            else if (*g_parsePos == L']')
+            else if (*ctx.pos == L']')
             {
-                ++g_parsePos;
+                ++ctx.pos;
                 return true;
             }
             else
@@ -180,46 +182,45 @@ namespace
         }
     }
 
-    bool ParseObject(Json& out)
+    bool ParseObject(ParseContext& ctx, Json& out)
     {
-        // g_parsePos at '{'
-        ++g_parsePos;
-        SkipWhitespace();
-        if (*g_parsePos == L'}')
+        ++ctx.pos;
+        SkipWhitespace(ctx);
+        if (*ctx.pos == L'}')
         {
-            ++g_parsePos;
+            ++ctx.pos;
             return true;
         }
         while (true)
         {
-            SkipWhitespace();
+            SkipWhitespace(ctx);
             std::wstring key;
-            if (!ParseString(key))
+            if (!ParseString(ctx, key))
             {
                 return false;
             }
-            SkipWhitespace();
-            if (*g_parsePos != L':')
+            SkipWhitespace(ctx);
+            if (*ctx.pos != L':')
             {
                 return false;
             }
-            ++g_parsePos;
-            SkipWhitespace();
-            const Json value = ParseValue();
-            if (g_parseFailed)
+            ++ctx.pos;
+            SkipWhitespace(ctx);
+            const Json value = ParseValue(ctx);
+            if (ctx.failed)
             {
                 return false;
             }
             out.Set(key, value);
-            SkipWhitespace();
-            if (*g_parsePos == L',')
+            SkipWhitespace(ctx);
+            if (*ctx.pos == L',')
             {
-                ++g_parsePos;
-                SkipWhitespace();
+                ++ctx.pos;
+                SkipWhitespace(ctx);
             }
-            else if (*g_parsePos == L'}')
+            else if (*ctx.pos == L'}')
             {
-                ++g_parsePos;
+                ++ctx.pos;
                 return true;
             }
             else
@@ -229,117 +230,117 @@ namespace
         }
     }
 
-    Json ParseValue()
+    Json ParseValue(ParseContext& ctx)
     {
-        SkipWhitespace();
-        if (g_parseFailed)
+        SkipWhitespace(ctx);
+        if (ctx.failed)
         {
             return Json::MakeNull();
         }
 
-        const wchar_t c = *g_parsePos;
+        const wchar_t c = *ctx.pos;
         if (c == L'{')
         {
             Json obj = Json::MakeObject();
-            if (!ParseObject(obj))
+            if (!ParseObject(ctx, obj))
             {
-                g_parseFailed = true;
+                ctx.failed = true;
             }
             return obj;
         }
         if (c == L'[')
         {
             Json arr = Json::MakeArray();
-            if (!ParseArray(arr))
+            if (!ParseArray(ctx, arr))
             {
-                g_parseFailed = true;
+                ctx.failed = true;
             }
             return arr;
         }
         if (c == L'"')
         {
             std::wstring value;
-            if (!ParseString(value))
+            if (!ParseString(ctx, value))
             {
-                g_parseFailed = true;
+                ctx.failed = true;
                 return Json::MakeNull();
             }
             return Json::MakeString(value);
         }
         if (c == L't')
         {
-            if (g_parsePos[1] == L'r' && g_parsePos[2] == L'u' && g_parsePos[3] == L'e')
+            if (ctx.pos[1] == L'r' && ctx.pos[2] == L'u' && ctx.pos[3] == L'e')
             {
-                g_parsePos += 4;
+                ctx.pos += 4;
                 return Json::MakeBool(true);
             }
-            g_parseFailed = true;
+            ctx.failed = true;
             return Json::MakeNull();
         }
         if (c == L'f')
         {
-            if (g_parsePos[1] == L'a' && g_parsePos[2] == L'l' && g_parsePos[3] == L's' && g_parsePos[4] == L'e')
+            if (ctx.pos[1] == L'a' && ctx.pos[2] == L'l' && ctx.pos[3] == L's' && ctx.pos[4] == L'e')
             {
-                g_parsePos += 5;
+                ctx.pos += 5;
                 return Json::MakeBool(false);
             }
-            g_parseFailed = true;
+            ctx.failed = true;
             return Json::MakeNull();
         }
         if (c == L'n')
         {
-            if (g_parsePos[1] == L'u' && g_parsePos[2] == L'l' && g_parsePos[3] == L'l')
+            if (ctx.pos[1] == L'u' && ctx.pos[2] == L'l' && ctx.pos[3] == L'l')
             {
-                g_parsePos += 4;
+                ctx.pos += 4;
                 return Json::MakeNull();
             }
-            g_parseFailed = true;
+            ctx.failed = true;
             return Json::MakeNull();
         }
         if (c == L'-' || (c >= L'0' && c <= L'9'))
         {
-            const wchar_t* start = g_parsePos;
+            const wchar_t* start = ctx.pos;
             if (c == L'-')
             {
-                ++g_parsePos;
+                ++ctx.pos;
             }
-            while (*g_parsePos >= L'0' && *g_parsePos <= L'9')
+            while (*ctx.pos >= L'0' && *ctx.pos <= L'9')
             {
-                ++g_parsePos;
+                ++ctx.pos;
             }
-            if (*g_parsePos == L'.')
+            if (*ctx.pos == L'.')
             {
-                ++g_parsePos;
-                while (*g_parsePos >= L'0' && *g_parsePos <= L'9')
+                ++ctx.pos;
+                while (*ctx.pos >= L'0' && *ctx.pos <= L'9')
                 {
-                    ++g_parsePos;
+                    ++ctx.pos;
                 }
             }
-            if (*g_parsePos == L'e' || *g_parsePos == L'E')
+            if (*ctx.pos == L'e' || *ctx.pos == L'E')
             {
-                ++g_parsePos;
-                if (*g_parsePos == L'+' || *g_parsePos == L'-')
+                ++ctx.pos;
+                if (*ctx.pos == L'+' || *ctx.pos == L'-')
                 {
-                    ++g_parsePos;
+                    ++ctx.pos;
                 }
-                while (*g_parsePos >= L'0' && *g_parsePos <= L'9')
+                while (*ctx.pos >= L'0' && *ctx.pos <= L'9')
                 {
-                    ++g_parsePos;
+                    ++ctx.pos;
                 }
             }
 
-            std::wstring token(start, g_parsePos);
+            std::wstring token(start, ctx.pos);
             wchar_t* end = nullptr;
             const double value = std::wcstod(token.c_str(), &end);
             if (end == token.c_str())
             {
-                g_parseFailed = true;
+                ctx.failed = true;
                 return Json::MakeNull();
             }
             return Json::MakeNumber(value);
         }
 
-        g_parseFailed = true;
+        ctx.failed = true;
         return Json::MakeNull();
     }
 
@@ -662,12 +663,13 @@ std::wstring Json::SerializeCompact() const
 
 bool Json::Parse(const std::wstring& text, Json& out)
 {
-    g_parsePos = text.c_str();
-    g_parseFailed = false;
+    ParseContext ctx;
+    ctx.pos = text.c_str();
+    ctx.failed = false;
 
-    const Json value = ParseValue();
-    SkipWhitespace();
-    if (g_parseFailed || *g_parsePos != L'\0')
+    const Json value = ParseValue(ctx);
+    SkipWhitespace(ctx);
+    if (ctx.failed || *ctx.pos != L'\0')
     {
         return false;
     }

@@ -9,6 +9,7 @@
 #include "../../src/litezones/GridData.h"
 #include "../../src/litezones/json.h"
 #include "../../src/litezones/LayoutEngine.h"
+#include "../../src/litezones/LayoutHelpers.h"
 #include "../../src/litezones/MonitorManager.h"
 #include "../../src/litezones/Paths.h"
 #include "../../src/litezones/Settings.h"
@@ -958,6 +959,284 @@ void TestCanvasMath()
     CHECK(!CanvasMath::HandleHits(zone, CanvasMath::SW, POINT{ 200, 150 }));
 }
 
+void TestLayoutHelpers()
+{
+    LayoutData def = LayoutHelpers::MakeDefaultLayout();
+    CHECK(def.type == FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid);
+    CHECK(def.zoneCount == DefaultValues::ZoneCount);
+    CHECK(def.showSpacing == DefaultValues::ShowSpacing);
+    CHECK(def.spacing == DefaultValues::Spacing);
+    CHECK(def.sensitivityRadius == DefaultValues::SensitivityRadius);
+
+    FancyZonesDataTypes::GridLayoutInfo grid3x2 = LayoutHelpers::MakeGridLayout(3, 2);
+    CHECK(grid3x2.rows() == 3);
+    CHECK(grid3x2.columns() == 2);
+    CHECK(grid3x2.zoneCount() == 6);
+    CHECK(grid3x2.rowsPercents()[0] + grid3x2.rowsPercents()[1] + grid3x2.rowsPercents()[2] == 10000);
+    CHECK(grid3x2.columnsPercents()[0] + grid3x2.columnsPercents()[1] == 10000);
+    CHECK(grid3x2.cellChildMap()[0][0] == 0);
+    CHECK(grid3x2.cellChildMap()[0][1] == 1);
+    CHECK(grid3x2.cellChildMap()[1][0] == 2);
+    CHECK(grid3x2.cellChildMap()[2][1] == 5);
+    CHECK(grid3x2.showSpacing() == DefaultValues::ShowSpacing);
+    CHECK(grid3x2.spacing() == DefaultValues::Spacing);
+    CHECK(grid3x2.sensitivityRadius() == DefaultValues::SensitivityRadius);
+
+    FancyZonesDataTypes::GridLayoutInfo grid1x1 = LayoutHelpers::MakeGridLayout(1, 1);
+    CHECK(grid1x1.zoneCount() == 1);
+    CHECK(grid1x1.rowsPercents()[0] == 10000);
+    CHECK(grid1x1.columnsPercents()[0] == 10000);
+
+    RECT acc{};
+    bool empty = true;
+    LayoutHelpers::ExtendBoundingRect(acc, empty, RECT{ 10, 20, 100, 200 });
+    CHECK(!empty);
+    CHECK(acc.left == 10);
+    CHECK(acc.top == 20);
+    CHECK(acc.right == 100);
+    CHECK(acc.bottom == 200);
+
+    LayoutHelpers::ExtendBoundingRect(acc, empty, RECT{ 5, 25, 150, 180 });
+    CHECK(acc.left == 5);
+    CHECK(acc.top == 20);
+    CHECK(acc.right == 150);
+    CHECK(acc.bottom == 200);
+
+    LayoutHelpers::ExtendBoundingRect(acc, empty, RECT{ 30, 10, 80, 250 });
+    CHECK(acc.left == 5);
+    CHECK(acc.top == 10);
+    CHECK(acc.right == 150);
+    CHECK(acc.bottom == 250);
+}
+
+void TestJsonParsePrimitives()
+{
+    Json val;
+    CHECK(Json::Parse(L"null", val));
+    CHECK(val.isNull());
+
+    CHECK(Json::Parse(L"true", val));
+    CHECK(val.AsBool() == true);
+
+    CHECK(Json::Parse(L"false", val));
+    CHECK(val.AsBool() == false);
+
+    CHECK(Json::Parse(L"0", val));
+    CHECK(val.AsNumber() == 0.0);
+
+    CHECK(Json::Parse(L"42", val));
+    CHECK(val.AsNumber() == 42.0);
+
+    CHECK(Json::Parse(L"-7", val));
+    CHECK(val.AsNumber() == -7.0);
+
+    CHECK(Json::Parse(L"3.14", val));
+    CHECK(val.AsNumber() > 3.13 && val.AsNumber() < 3.15);
+
+    CHECK(Json::Parse(L"1e10", val));
+    CHECK(val.AsNumber() == 1e10);
+
+    CHECK(Json::Parse(L"3.14e-2", val));
+    CHECK(val.AsNumber() > 0.0313 && val.AsNumber() < 0.0315);
+
+    CHECK(Json::Parse(L"-0", val));
+    CHECK(val.AsNumber() == 0.0);
+}
+
+void TestJsonParseStrings()
+{
+    Json val;
+    CHECK(Json::Parse(L"\"\"", val));
+    CHECK(val.AsString() == L"");
+
+    CHECK(Json::Parse(L"\"hello\"", val));
+    CHECK(val.AsString() == L"hello");
+
+    CHECK(Json::Parse(L"\"line1\\nline2\"", val));
+    CHECK(val.AsString() == L"line1\nline2");
+
+    CHECK(Json::Parse(L"\"tab\\there\"", val));
+    CHECK(val.AsString() == L"tab\there");
+
+    CHECK(Json::Parse(L"\"back\\\\slash\"", val));
+    CHECK(val.AsString() == L"back\\slash");
+
+    CHECK(Json::Parse(L"\"quo\\\"te\"", val));
+    CHECK(val.AsString() == L"quo\"te");
+
+    CHECK(Json::Parse(L"\"slash\\/ok\"", val));
+    CHECK(val.AsString() == L"slash/ok");
+
+    CHECK(Json::Parse(L"\"cr\\r\"", val));
+    CHECK(val.AsString() == L"cr\r");
+
+    CHECK(Json::Parse(L"\"bs\\b\"", val));
+    CHECK(val.AsString() == L"bs\b");
+
+    CHECK(Json::Parse(L"\"ff\\f\"", val));
+    CHECK(val.AsString() == L"ff\f");
+
+    CHECK(Json::Parse(L"\"uni\\u0041\"", val));
+    CHECK(val.AsString() == L"uniA");
+
+    CHECK(Json::Parse(L"\"zh\\u4e16\"", val));
+    CHECK(val.AsString() == L"zh\x4E16");
+
+    CHECK(Json::Parse(L"\" surrogate \\uD834\\uDD1E end\"", val));
+    CHECK(val.AsString() == L" surrogate \xD834\xDD1E end");
+}
+
+void TestJsonParseStructures()
+{
+    Json val;
+
+    CHECK(Json::Parse(L"{}", val));
+    CHECK(val.type() == Json::Type::Object);
+    CHECK(val.Size() == 0);
+
+    CHECK(Json::Parse(L"{\"a\": 1}", val));
+    CHECK(val.Has(L"a"));
+    CHECK(val.At(L"a").AsNumber() == 1.0);
+
+    CHECK(Json::Parse(L"{\"x\": 1, \"y\": 2}", val));
+    CHECK(val.Size() == 2);
+    CHECK(val.At(L"x").AsNumber() == 1.0);
+    CHECK(val.At(L"y").AsNumber() == 2.0);
+
+    CHECK(Json::Parse(L"{\"n\": null, \"b\": true, \"s\": \"hi\"}", val));
+    CHECK(val.At(L"n").isNull());
+    CHECK(val.At(L"b").AsBool() == true);
+    CHECK(val.At(L"s").AsString() == L"hi");
+
+    CHECK(Json::Parse(L"{\"nested\": {\"inner\": 42}}", val));
+    CHECK(val.At(L"nested").At(L"inner").AsNumber() == 42.0);
+
+    CHECK(Json::Parse(L"[]", val));
+    CHECK(val.type() == Json::Type::Array);
+    CHECK(val.Size() == 0);
+
+    CHECK(Json::Parse(L"[1, 2, 3]", val));
+    CHECK(val.Size() == 3);
+    CHECK(val.At(0).AsNumber() == 1.0);
+    CHECK(val.At(1).AsNumber() == 2.0);
+    CHECK(val.At(2).AsNumber() == 3.0);
+
+    CHECK(Json::Parse(L"[1, \"two\", true, null]", val));
+    CHECK(val.Size() == 4);
+    CHECK(val.At(0).AsNumber() == 1.0);
+    CHECK(val.At(1).AsString() == L"two");
+    CHECK(val.At(2).AsBool() == true);
+    CHECK(val.At(3).isNull());
+
+    CHECK(Json::Parse(L"[[1, 2], [3, 4]]", val));
+    CHECK(val.Size() == 2);
+    CHECK(val.At(0).At(0).AsNumber() == 1.0);
+    CHECK(val.At(1).At(1).AsNumber() == 4.0);
+
+    CHECK(Json::Parse(L"{\"arr\": [10, {\"k\": \"v\"}]}", val));
+    CHECK(val.At(L"arr").At(1).At(L"k").AsString() == L"v");
+}
+
+void TestJsonParseEdgeCases()
+{
+    Json val;
+    CHECK(!Json::Parse(L"", val));
+    CHECK(!Json::Parse(L"   ", val));
+    CHECK(!Json::Parse(L"{,}", val));
+    CHECK(!Json::Parse(L"[1,]", val));
+    CHECK(!Json::Parse(L"{\"a\":1}extra", val));
+    CHECK(!Json::Parse(L"{a: 1}", val));
+    CHECK(!Json::Parse(L"{'a': 1}", val));
+    CHECK(!Json::Parse(L"NaN", val));
+    CHECK(!Json::Parse(L"Infinity", val));
+    CHECK(!Json::Parse(L"\"unterminated", val));
+    CHECK(!Json::Parse(L"[1, 2", val));
+    CHECK(!Json::Parse(L"{\"a\": 1", val));
+    CHECK(!Json::Parse(L"tru", val));
+    CHECK(!Json::Parse(L"fals", val));
+    CHECK(!Json::Parse(L"nul", val));
+}
+
+void TestJsonRoundTrip()
+{
+    const std::wstring inputs[] = {
+        L"null",
+        L"true",
+        L"false",
+        L"42",
+        L"-7",
+        L"3.14",
+        L"\"hello world\"",
+        L"\"line\\nbreak\"",
+        L"\"back\\\\slash\"",
+        L"\"quo\\\"te\"",
+        L"{}",
+        L"{\"a\":1,\"b\":2}",
+        L"[]",
+        L"[1,2,3]",
+        L"{\"n\":{\"arr\":[true,false,null]}}",
+    };
+    for (const auto& input : inputs)
+    {
+        Json parsed;
+        CHECK(Json::Parse(input, parsed));
+        const std::wstring compact = parsed.SerializeCompact();
+        Json reparsed;
+        CHECK(Json::Parse(compact, reparsed));
+        CHECK(parsed.SerializeCompact() == reparsed.SerializeCompact());
+    }
+}
+
+void TestJsonApi()
+{
+    Json obj;
+    obj.Set(L"a", 1.0);
+    obj.Set(L"b", true);
+    obj.Set(L"c", Json::MakeString(L"hello"));
+    CHECK(obj.Has(L"a"));
+    CHECK(obj.Has(L"b"));
+    CHECK(obj.Has(L"c"));
+    CHECK(!obj.Has(L"d"));
+    CHECK(obj.Size() == 3);
+    CHECK(obj.At(L"a").AsNumber() == 1.0);
+    CHECK(obj.At(L"b").AsBool() == true);
+    CHECK(obj.At(L"c").AsString() == L"hello");
+    CHECK(!obj.Has(L"x"));
+
+    obj.Set(L"a", 99.0);
+    CHECK(obj.At(L"a").AsNumber() == 99.0);
+    CHECK(obj.Size() == 3);
+
+    Json arr;
+    arr.Push(Json::MakeNumber(1));
+    arr.Push(Json::MakeNumber(2));
+    arr.Push(Json::MakeNumber(3));
+    CHECK(arr.Size() == 3);
+    CHECK(arr.At(0).AsNumber() == 1.0);
+    CHECK(arr.At(2).AsNumber() == 3.0);
+    CHECK(arr.At(99).isNull());
+
+    Json def;
+    CHECK(def.isNull());
+    CHECK(def.AsNumber(5.0) == 5.0);
+    CHECK(def.AsBool(true) == true);
+    CHECK(def.AsString(L"fallback") == L"fallback");
+    CHECK(def.Size() == 0);
+}
+
+void TestJsonSerializeIndented()
+{
+    Json obj = Json::MakeObject();
+    obj.Set(L"name", Json::MakeString(L"test"));
+    obj.Set(L"count", 42.0);
+    const std::wstring indented = obj.SerializeIndented();
+    CHECK(indented.find(L'\n') != std::wstring::npos);
+    CHECK(indented.find(L"  ") != std::wstring::npos);
+    CHECK(indented.find(L"\"name\"") != std::wstring::npos);
+    CHECK(indented.find(L"\"test\"") != std::wstring::npos);
+    CHECK(indented.find(L"42") != std::wstring::npos);
+}
+
 int main()
 {
     TestZone();
@@ -989,6 +1268,14 @@ int main()
     TestGridDataSplit2x2();
     TestGridDataMerge();
     TestCanvasMath();
+    TestLayoutHelpers();
+    TestJsonParsePrimitives();
+    TestJsonParseStrings();
+    TestJsonParseStructures();
+    TestJsonParseEdgeCases();
+    TestJsonRoundTrip();
+    TestJsonApi();
+    TestJsonSerializeIndented();
 
     if (g_failures == 0)
     {

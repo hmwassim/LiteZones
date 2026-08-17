@@ -1,5 +1,7 @@
 #include "MonitorManager.h"
 
+#include "LayoutHelpers.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <cwchar>
@@ -135,18 +137,7 @@ namespace MonitorUtils
         for (const auto& [monitor, rect] : monitorRects)
         {
             (void)monitor;
-            if (empty)
-            {
-                empty = false;
-                result = rect;
-            }
-            else
-            {
-                result.left = min(result.left, rect.left);
-                result.top = min(result.top, rect.top);
-                result.right = max(result.right, rect.right);
-                result.bottom = max(result.bottom, rect.bottom);
-            }
+            LayoutHelpers::ExtendBoundingRect(result, empty, rect);
         }
 
         return result;
