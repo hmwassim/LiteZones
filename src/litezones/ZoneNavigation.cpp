@@ -12,6 +12,8 @@ namespace Util
         const size_t invalidResult = zoneRects.size();
         constexpr double inf = 1e100;
         constexpr double eccentricity = 2.0;
+        constexpr double kMaxAngleTan = 10.0;
+        constexpr double kZoneOverlapOffset = 0.001;
 
         auto rectCenter = [](RECT rect) {
             return Complex{
@@ -32,7 +34,7 @@ namespace Util
             // No need to divide by abs(arrowDirection): it is 1 for unit arrows.
             const double cosAngle = scalarProduct / std::abs(zoneDirection);
             const double tanAngle = std::abs(std::tan(std::acos(cosAngle)));
-            if (tanAngle > 10)
+            if (tanAngle > kMaxAngleTan)
             {
                 // The angle is too wide.
                 return inf;
@@ -56,7 +58,7 @@ namespace Util
             Complex center = rectCenter(zoneRects[i]);
 
             // Offset the zone slightly to differentiate overlapping zones.
-            center += 0.001 * (i + 1);
+            center += kZoneOverlapOffset * (i + 1);
 
             candidateCenters.emplace_back(i, center);
         }

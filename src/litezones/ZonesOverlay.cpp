@@ -17,6 +17,8 @@ namespace
         return result;
     }
 
+    constexpr float kDefaultDpi = 96.f;
+
     D2D1_RECT_F ToRectF(const RECT& rect) noexcept
     {
         D2D1_RECT_F result;
@@ -85,8 +87,8 @@ bool ZonesOverlay::EnsureResources()
     rtProps.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
     rtProps.pixelFormat.format = DXGI_FORMAT_UNKNOWN;
     rtProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-    rtProps.dpiX = 96.f;
-    rtProps.dpiY = 96.f;
+    rtProps.dpiX = kDefaultDpi;
+    rtProps.dpiY = kDefaultDpi;
 
     D2D1_HWND_RENDER_TARGET_PROPERTIES hwndProps{};
     hwndProps.hwnd = m_window;

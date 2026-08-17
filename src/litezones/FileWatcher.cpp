@@ -7,6 +7,7 @@ namespace
     constexpr DWORD kWatchBufferSize = 64 * 1024;
     constexpr DWORD kWatchFilter = FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SIZE;
     constexpr DWORD kStopEventIndex = WAIT_OBJECT_0 + 1;
+    constexpr DWORD kStopTimeoutMs = 500;
 }
 
 FileWatcher::~FileWatcher()
@@ -60,7 +61,7 @@ void FileWatcher::Stop()
     }
     if (m_thread)
     {
-        WaitForSingleObject(m_thread, 500);
+        WaitForSingleObject(m_thread, kStopTimeoutMs);
         CloseHandle(m_thread);
         m_thread = nullptr;
     }

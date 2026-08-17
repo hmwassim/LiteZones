@@ -27,9 +27,12 @@ namespace
     const std::wstring kKeyOverlappingZonesAlgorithm = L"overlappingZonesAlgorithm";
     const std::wstring kKeyExcludedApps = L"excludedApps";
 
+    constexpr int kMinOpacity = 0;
+    constexpr int kMaxOpacity = 100;
+
     int ClampOpacity(int value)
     {
-        return value < 0 ? 0 : (value > 100 ? 100 : value);
+        return value < kMinOpacity ? kMinOpacity : (value > kMaxOpacity ? kMaxOpacity : value);
     }
 }
 

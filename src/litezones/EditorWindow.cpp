@@ -19,6 +19,14 @@ namespace
     constexpr wchar_t kWindowTitle[] = L"LiteZones - Layout Editor";
 
     constexpr int kLeftPanelWidth = 216;
+    constexpr int kDefaultVirtualWidth = 1600;
+    constexpr int kDefaultVirtualHeight = 900;
+    constexpr int kEditorInitialWidth = 900;
+    constexpr int kEditorInitialHeight = 620;
+    constexpr int kMaxZoneCount = 16;
+    constexpr int kMaxSpacing = 100;
+    constexpr int kMinTrackWidth = 700;
+    constexpr int kMinTrackHeight = 480;
 
     struct NewLayoutResult
     {
@@ -56,8 +64,8 @@ namespace
 
     void GetPrimaryWorkArea(int& width, int& height)
     {
-        width = 1600;
-        height = 900;
+        width = kDefaultVirtualWidth;
+        height = kDefaultVirtualHeight;
         const std::vector<MonitorUtils::MonitorRect> monitors = MonitorUtils::GetAllMonitorWorkRects();
         if (!monitors.empty())
         {
@@ -99,8 +107,8 @@ namespace
                 result->grid = IsDlgButtonChecked(dlg, IDC_NEW_GRID) == BST_CHECKED;
                 if (result->grid)
                 {
-                    result->rows = std::max(1, std::min(16, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE))));
-                    result->columns = std::max(1, std::min(16, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE))));
+                    result->rows = std::max(1, std::min(kMaxZoneCount, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE))));
+                    result->columns = std::max(1, std::min(kMaxZoneCount, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE))));
                 }
                 EndDialog(dlg, IDOK);
                 return TRUE;
@@ -177,7 +185,7 @@ bool EditorWindow::Create()
     }
 
     m_hwnd = CreateWindowExW(WS_CLIPCHILDREN, kEditorClassName, kWindowTitle, WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT, CW_USEDEFAULT, 900, 620, nullptr, nullptr, m_hInstance, this);
+                             CW_USEDEFAULT, CW_USEDEFAULT, kEditorInitialWidth, kEditorInitialHeight, nullptr, nullptr, m_hInstance, this);
     if (!m_hwnd)
     {
         return false;
@@ -406,7 +414,7 @@ void EditorWindow::OnSelectionChanged()
         {
             SetWindowTextW(m_staticHint, L"");
         }
-        EditorCanvas::SetZones(m_canvas, 1600, 900, {});
+        EditorCanvas::SetZones(m_canvas, kDefaultVirtualWidth, kDefaultVirtualHeight, {});
         return;
     }
 
@@ -451,14 +459,14 @@ void EditorWindow::UpdateCanvasPreview()
     const int index = SelectedListIndex();
     if (index < 0 || index >= static_cast<int>(m_entries.size()))
     {
-        EditorCanvas::SetZones(m_canvas, 1600, 900, {});
+        EditorCanvas::SetZones(m_canvas, kDefaultVirtualWidth, kDefaultVirtualHeight, {});
         return;
     }
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     std::vector<EditorCanvas::ZoneRect> zones;
 
-    RECT monitorRect{ 0, 0, 1600, 900 };
+    RECT monitorRect{ 0, 0, kDefaultVirtualWidth, kDefaultVirtualHeight };
     SelectedMonitorRect(monitorRect);
     const int virtualWidth = std::max(1, static_cast<int>(monitorRect.right - monitorRect.left));
     const int virtualHeight = std::max(1, static_cast<int>(monitorRect.bottom - monitorRect.top));
@@ -540,7 +548,7 @@ void EditorWindow::OnSpacingChanged()
     {
         return;
     }
-    value = std::max(0, std::min(100, value));
+    value = std::max(0, std::min(kMaxSpacing, value));
     m_spacingValue = value;
 
     const int index = SelectedListIndex();
@@ -605,7 +613,7 @@ void EditorWindow::OnZoneCountChanged()
     {
         return;
     }
-    value = std::max(1, std::min(16, value));
+    value = std::max(1, std::min(kMaxZoneCount, value));
     m_zoneCountValue = value;
 
     UpdateCanvasPreview();
@@ -1135,8 +1143,8 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     case WM_GETMINMAXINFO:
     {
         auto* info = reinterpret_cast<MINMAXINFO*>(lParam);
-        info->ptMinTrackSize.x = 700;
-        info->ptMinTrackSize.y = 480;
+        info->ptMinTrackSize.x = kMinTrackWidth;
+        info->ptMinTrackSize.y = kMinTrackHeight;
         return 0;
     }
 

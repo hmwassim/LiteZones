@@ -6,6 +6,15 @@
 #include <cstdlib>
 #include <string>
 
+namespace
+{
+    constexpr size_t kMaxPathLength = 32768;
+    constexpr int kMaxMinimizedWaitRetries = 5;
+    constexpr DWORD kRetrySleepMs = 100;
+    constexpr int kMaxPlacementRetries = 10;
+    constexpr int kPlacementTolerancePx = 4;
+}
+
 namespace WindowUtils
 {
     bool IsWindowMaximized(HWND window) noexcept
@@ -53,7 +62,7 @@ namespace WindowUtils
             return std::wstring();
         }
 
-        std::wstring path(32768, L'\0');
+        std::wstring path(kMaxPathLength, L'\0');
         DWORD written = static_cast<DWORD>(path.size());
         if (!QueryFullProcessImageNameW(process, 0, path.data(), &written))
         {
@@ -111,9 +120,9 @@ namespace WindowUtils
         GetWindowPlacement(window, &placement);
 
         // Wait while SW_SHOWMINIMIZED would be removed from the window (Issue #1685).
-        for (int i = 0; i < 5 && placement.showCmd == SW_SHOWMINIMIZED; ++i)
+        for (int i = 0; i < kMaxMinimizedWaitRetries && placement.showCmd == SW_SHOWMINIMIZED; ++i)
         {
-            Sleep(100);
+            Sleep(kRetrySleepMs);
             GetWindowPlacement(window, &placement);
         }
 
@@ -161,22 +170,22 @@ namespace WindowUtils
         // Some apps (notably Chromium-based browsers) keep overriding the placement
         // while their move loop is still finalizing, so keep re-applying until the
         // window actually lands on the target (or give up after ~1 second).
-        for (int attempt = 0; attempt < 10; ++attempt)
+        for (int attempt = 0; attempt < kMaxPlacementRetries; ++attempt)
         {
             RECT current{};
             if (!GetWindowRect(window, &current))
             {
                 break;
             }
-            if (std::abs(current.left - screenTarget.left) <= 4 &&
-                std::abs(current.top - screenTarget.top) <= 4 &&
-                std::abs(current.right - current.left - (screenTarget.right - screenTarget.left)) <= 4 &&
-                std::abs(current.bottom - current.top - (screenTarget.bottom - screenTarget.top)) <= 4)
+            if (std::abs(current.left - screenTarget.left) <= kPlacementTolerancePx &&
+                std::abs(current.top - screenTarget.top) <= kPlacementTolerancePx &&
+                std::abs(current.right - current.left - (screenTarget.right - screenTarget.left)) <= kPlacementTolerancePx &&
+                std::abs(current.bottom - current.top - (screenTarget.bottom - screenTarget.top)) <= kPlacementTolerancePx)
             {
                 break;
             }
 
-            Sleep(100);
+            Sleep(kRetrySleepMs);
             GetWindowPlacement(window, &placement);
             if (maximizeLater || placement.showCmd == SW_SHOWMAXIMIZED)
             {

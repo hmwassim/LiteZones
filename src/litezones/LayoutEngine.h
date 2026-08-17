@@ -50,7 +50,7 @@ public:
     ZoneIndexSet ZonesFromPoint(POINT pt) const noexcept;
     // Returns all zones spanned by the minimum bounding rectangle containing the two given zone index sets.
     ZoneIndexSet GetCombinedZoneRange(const ZoneIndexSet& initialZones, const ZoneIndexSet& finalZones) const noexcept;
-    RECT GetCombinedZonesRect(const ZoneIndexSet& zones);
+    RECT GetCombinedZonesRect(const ZoneIndexSet& zones) const;
 
 private:
     const LayoutData m_data;

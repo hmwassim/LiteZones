@@ -1,6 +1,11 @@
 #include "DragController.h"
 
 #include "Settings.h"
+
+namespace
+{
+    constexpr BYTE kDragTransparencyAlpha = 128; // 50% of 255
+}
 #include "WindowProcessing.h"
 #include "WindowProperties.h"
 #include "WindowUtils.h"
@@ -264,7 +269,7 @@ void DragController::SetWindowTransparency()
         return;
     }
 
-    if (SetLayeredWindowAttributes(m_draggingWindow, 0, (255 * 50) / 100, LWA_ALPHA))
+    if (SetLayeredWindowAttributes(m_draggingWindow, 0, kDragTransparencyAlpha, LWA_ALPHA))
     {
         m_windowProperties.transparencySet = true;
     }
