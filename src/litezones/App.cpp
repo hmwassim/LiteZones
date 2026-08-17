@@ -330,26 +330,10 @@ void App::HandleWindowCreated(HWND window)
         return;
     }
 
-    const std::wstring processPath = WindowUtils::GetProcessPath(window);
-    if (processPath.empty())
-    {
-        return;
-    }
-    const ZoneIndexSet zones = AppZoneHistory::instance().GetAppLastZoneIndexSet(processPath);
-    if (zones.empty())
-    {
-        return;
-    }
-
-    POINT pt{};
-    GetCursorPos(&pt);
-    WorkArea* workArea = m_workAreaManager.WorkAreaContainingPointWithFallback(pt);
-    if (!workArea)
-    {
-        return;
-    }
-
-    workArea->Snap(window, zones);
+    // Windows already remembers window placement via SetWindowPlacement (called
+    // by SizeWindowToRect during snap). Let it restore the position natively
+    // instead of overriding with process-path-based history, which breaks
+    // multi-window apps (e.g. Chrome profiles sharing the same chrome.exe).
 }
 
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
