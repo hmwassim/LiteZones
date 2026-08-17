@@ -2,10 +2,10 @@
 
 // Shared test fixtures, macros, and helpers for ZoneTests.
 
-#include "../../src/litezones/LayoutEngine.h"
-#include "../../src/litezones/LayoutTypes.h"
-#include "../../src/litezones/MonitorManager.h"
-#include "../../src/litezones/Zone.h"
+#include "../src/layout/LayoutEngine.h"
+#include "../src/layout/LayoutTypes.h"
+#include "../src/platform/MonitorManager.h"
+#include "../src/layout/Zone.h"
 
 #include <windows.h>
 

@@ -1,7 +1,7 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/CanvasMath.h"
-#include "../../src/litezones/GridData.h"
+#include "../src/layout/CanvasMath.h"
+#include "../src/editor/GridData.h"
 
 void TestGridDataZones()
 {

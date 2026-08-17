@@ -1,8 +1,8 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/GuidUtils.h"
-#include "../../src/litezones/LayoutHelpers.h"
-#include "../../src/litezones/MonitorManager.h"
+#include "../src/utils/GuidUtils.h"
+#include "../src/layout/LayoutHelpers.h"
+#include "../src/platform/MonitorManager.h"
 #include "ZoneNavigation.h"
 
 void TestMonitorOrdering()

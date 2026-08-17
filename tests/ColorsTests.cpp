@@ -1,7 +1,7 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/Colors.h"
-#include "../../src/litezones/Settings.h"
+#include "../src/overlay/Colors.h"
+#include "../src/data/Settings.h"
 
 void TestHexToRgbViaGetZoneColors()
 {

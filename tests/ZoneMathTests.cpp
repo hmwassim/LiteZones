@@ -1,6 +1,6 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/WindowProperties.h"
+#include "../src/platform/WindowProperties.h"
 
 void TestZone()
 {

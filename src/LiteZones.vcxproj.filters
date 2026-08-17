@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="App">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{7B2E4C10-F1A3-4D89-B6C2-E5A7D8F1C901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Layout">
+      <UniqueIdentifier>{D6A8B1E5-F7C9-4243-B0A1-4E5F6A7B8C93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data">
+      <UniqueIdentifier>{B4E6F9C3-D5A7-4021-9E8F-2C3D4E5F6A71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{C5F7A0D4-E6B8-4132-AF90-3D4E5F6A7B82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay">
+      <UniqueIdentifier>{A3D5E8B2-C4F6-4910-8D7E-1B2C3D4E5F60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{E7B9C2F6-A8D0-4354-C1B2-5F6A7B8C9D04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{F8C0D3A7-B9E1-4465-D2C3-6A7B8C9D0E15}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="app\main.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="app\App.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="app\Hooks.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="app\DragController.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="app\TrayService.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorWindow.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorWindowLayout.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorWindowActions.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorCanvas.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorCanvasRendering.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\EditorCanvasInput.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\GridData.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\LayoutEngine.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\LayoutAssignedWindows.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\Zone.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="layout\ZoneAssignmentStore.cpp">
+      <Filter>Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="data\Settings.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\SettingsDialog.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\CustomLayouts.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\AppliedLayouts.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\AppZoneHistory.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\json.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\Paths.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="data\FileWatcher.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\WindowUtils.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\WindowProcessing.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\WindowProperties.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\MonitorManager.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\WorkArea.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\WorkAreaManager.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="overlay\ZonesOverlay.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="overlay\HighlightedZones.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="overlay\Colors.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\GuidUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="app\App.h">
+      <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="app\Hooks.h">
+      <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="app\DragController.h">
+      <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="app\TrayService.h">
+      <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\EditorWindow.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\EditorWindowInternal.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\EditorCanvas.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\EditorCanvasInternal.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\GridData.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\LayoutEngine.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\LayoutTypes.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\LayoutHelpers.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\LayoutAssignedWindows.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\Zone.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\ZoneAssignmentStore.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="layout\CanvasMath.h">
+      <Filter>Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="data\Settings.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\SettingsDialog.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\CustomLayouts.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\AppliedLayouts.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\AppZoneHistory.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\json.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\Paths.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="data\FileWatcher.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\WindowUtils.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\WindowProcessing.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\WindowProperties.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\MonitorManager.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\WorkArea.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\WorkAreaManager.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="overlay\ZonesOverlay.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="overlay\HighlightedZones.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="overlay\Colors.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\GuidUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="LiteZones.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico">
+      <Filter>Resources</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

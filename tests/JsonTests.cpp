@@ -1,6 +1,6 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/json.h"
+#include "../src/data/json.h"
 
 void TestJsonParsePrimitives()
 {

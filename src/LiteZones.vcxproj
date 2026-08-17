@@ -58,6 +58,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)app;$(ProjectDir)editor;$(ProjectDir)layout;$(ProjectDir)data;$(ProjectDir)platform;$(ProjectDir)overlay;$(ProjectDir)utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -78,6 +79,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)app;$(ProjectDir)editor;$(ProjectDir)layout;$(ProjectDir)data;$(ProjectDir)platform;$(ProjectDir)overlay;$(ProjectDir)utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -88,71 +90,77 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="App.cpp" />
-    <ClCompile Include="AppZoneHistory.cpp" />
-    <ClCompile Include="AppliedLayouts.cpp" />
-    <ClCompile Include="Colors.cpp" />
-    <ClCompile Include="CustomLayouts.cpp" />
-    <ClCompile Include="DragController.cpp" />
-    <ClCompile Include="EditorCanvas.cpp" />
-    <ClCompile Include="EditorWindow.cpp" />
-    <ClCompile Include="FileWatcher.cpp" />
-    <ClCompile Include="GridData.cpp" />
-    <ClCompile Include="HighlightedZones.cpp" />
-    <ClCompile Include="Hooks.cpp" />
-    <ClCompile Include="json.cpp" />
-    <ClCompile Include="LayoutAssignedWindows.cpp" />
-    <ClCompile Include="LayoutEngine.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="MonitorManager.cpp" />
-    <ClCompile Include="Paths.cpp" />
-    <ClCompile Include="Settings.cpp" />
-    <ClCompile Include="SettingsDialog.cpp" />
-    <ClCompile Include="TrayService.cpp" />
-    <ClCompile Include="GuidUtils.cpp" />
-    <ClCompile Include="WindowProcessing.cpp" />
-    <ClCompile Include="WindowProperties.cpp" />
-    <ClCompile Include="WindowUtils.cpp" />
-    <ClCompile Include="WorkArea.cpp" />
-    <ClCompile Include="WorkAreaManager.cpp" />
-    <ClCompile Include="Zone.cpp" />
-    <ClCompile Include="ZoneAssignmentStore.cpp" />
-    <ClCompile Include="ZonesOverlay.cpp" />
+    <ClCompile Include="app\App.cpp" />
+    <ClCompile Include="app\DragController.cpp" />
+    <ClCompile Include="app\Hooks.cpp" />
+    <ClCompile Include="app\TrayService.cpp" />
+    <ClCompile Include="app\main.cpp" />
+    <ClCompile Include="editor\EditorCanvas.cpp" />
+    <ClCompile Include="editor\EditorCanvasInput.cpp" />
+    <ClCompile Include="editor\EditorCanvasRendering.cpp" />
+    <ClCompile Include="editor\EditorWindow.cpp" />
+    <ClCompile Include="editor\EditorWindowActions.cpp" />
+    <ClCompile Include="editor\EditorWindowLayout.cpp" />
+    <ClCompile Include="editor\GridData.cpp" />
+    <ClCompile Include="layout\LayoutAssignedWindows.cpp" />
+    <ClCompile Include="layout\LayoutEngine.cpp" />
+    <ClCompile Include="layout\Zone.cpp" />
+    <ClCompile Include="layout\ZoneAssignmentStore.cpp" />
+    <ClCompile Include="data\AppZoneHistory.cpp" />
+    <ClCompile Include="data\AppliedLayouts.cpp" />
+    <ClCompile Include="data\CustomLayouts.cpp" />
+    <ClCompile Include="data\FileWatcher.cpp" />
+    <ClCompile Include="data\json.cpp" />
+    <ClCompile Include="data\Paths.cpp" />
+    <ClCompile Include="data\Settings.cpp" />
+    <ClCompile Include="data\SettingsDialog.cpp" />
+    <ClCompile Include="platform\MonitorManager.cpp" />
+    <ClCompile Include="platform\WindowProcessing.cpp" />
+    <ClCompile Include="platform\WindowProperties.cpp" />
+    <ClCompile Include="platform\WindowUtils.cpp" />
+    <ClCompile Include="platform\WorkArea.cpp" />
+    <ClCompile Include="platform\WorkAreaManager.cpp" />
+    <ClCompile Include="overlay\Colors.cpp" />
+    <ClCompile Include="overlay\HighlightedZones.cpp" />
+    <ClCompile Include="overlay\ZonesOverlay.cpp" />
+    <ClCompile Include="utils\GuidUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.h" />
-    <ClInclude Include="AppZoneHistory.h" />
-    <ClInclude Include="AppliedLayouts.h" />
-    <ClInclude Include="CanvasMath.h" />
-    <ClInclude Include="Colors.h" />
-    <ClInclude Include="CustomLayouts.h" />
-    <ClInclude Include="DragController.h" />
-    <ClInclude Include="EditorCanvas.h" />
-    <ClInclude Include="EditorWindow.h" />
-    <ClInclude Include="FileWatcher.h" />
-    <ClInclude Include="GridData.h" />
-    <ClInclude Include="HighlightedZones.h" />
-    <ClInclude Include="Hooks.h" />
-    <ClInclude Include="json.h" />
-    <ClInclude Include="LayoutAssignedWindows.h" />
-    <ClInclude Include="LayoutEngine.h" />
-    <ClInclude Include="LayoutHelpers.h" />
-    <ClInclude Include="LayoutTypes.h" />
-    <ClInclude Include="MonitorManager.h" />
-    <ClInclude Include="Paths.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Settings.h" />
-    <ClInclude Include="SettingsDialog.h" />
-    <ClInclude Include="TrayService.h" />
-    <ClInclude Include="GuidUtils.h" />
-    <ClInclude Include="WindowProcessing.h" />
-    <ClInclude Include="WindowProperties.h" />
-    <ClInclude Include="WindowUtils.h" />
-    <ClInclude Include="WorkArea.h" />
-    <ClInclude Include="WorkAreaManager.h" />
-    <ClInclude Include="Zone.h" />
-    <ClInclude Include="ZoneAssignmentStore.h" />
-    <ClInclude Include="ZonesOverlay.h" />
+    <ClInclude Include="app\App.h" />
+    <ClInclude Include="app\DragController.h" />
+    <ClInclude Include="app\Hooks.h" />
+    <ClInclude Include="app\TrayService.h" />
+    <ClInclude Include="editor\EditorCanvas.h" />
+    <ClInclude Include="editor\EditorCanvasInternal.h" />
+    <ClInclude Include="editor\EditorWindow.h" />
+    <ClInclude Include="editor\EditorWindowInternal.h" />
+    <ClInclude Include="editor\GridData.h" />
+    <ClInclude Include="layout\CanvasMath.h" />
+    <ClInclude Include="layout\LayoutAssignedWindows.h" />
+    <ClInclude Include="layout\LayoutEngine.h" />
+    <ClInclude Include="layout\LayoutHelpers.h" />
+    <ClInclude Include="layout\LayoutTypes.h" />
+    <ClInclude Include="layout\Zone.h" />
+    <ClInclude Include="layout\ZoneAssignmentStore.h" />
+    <ClInclude Include="data\AppZoneHistory.h" />
+    <ClInclude Include="data\AppliedLayouts.h" />
+    <ClInclude Include="data\CustomLayouts.h" />
+    <ClInclude Include="data\FileWatcher.h" />
+    <ClInclude Include="data\json.h" />
+    <ClInclude Include="data\Paths.h" />
+    <ClInclude Include="data\Settings.h" />
+    <ClInclude Include="data\SettingsDialog.h" />
+    <ClInclude Include="platform\MonitorManager.h" />
+    <ClInclude Include="platform\WindowProcessing.h" />
+    <ClInclude Include="platform\WindowProperties.h" />
+    <ClInclude Include="platform\WindowUtils.h" />
+    <ClInclude Include="platform\WorkArea.h" />
+    <ClInclude Include="platform\WorkAreaManager.h" />
+    <ClInclude Include="overlay\Colors.h" />
+    <ClInclude Include="overlay\HighlightedZones.h" />
+    <ClInclude Include="overlay\ZonesOverlay.h" />
+    <ClInclude Include="utils\GuidUtils.h" />
+    <ClInclude Include="utils\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="LiteZones.rc" />

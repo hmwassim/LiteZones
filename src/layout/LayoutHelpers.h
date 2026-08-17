@@ -7,6 +7,14 @@
 
 namespace LayoutHelpers
 {
+    inline int ScaleForDpi(int value, UINT dpi)
+    {
+        return MulDiv(value, static_cast<int>(dpi), 96);
+    }
+
+    inline int RectWidth(const RECT& r) noexcept { return r.right - r.left; }
+    inline int RectHeight(const RECT& r) noexcept { return r.bottom - r.top; }
+
     inline LayoutData MakeDefaultLayout()
     {
         LayoutData layout;

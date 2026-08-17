@@ -1,10 +1,10 @@
 #include "TestHarness.h"
 
-#include "../../src/litezones/AppZoneHistory.h"
-#include "../../src/litezones/AppliedLayouts.h"
-#include "../../src/litezones/CustomLayouts.h"
-#include "../../src/litezones/GuidUtils.h"
-#include "../../src/litezones/Paths.h"
+#include "../src/data/AppZoneHistory.h"
+#include "../src/data/AppliedLayouts.h"
+#include "../src/data/CustomLayouts.h"
+#include "../src/utils/GuidUtils.h"
+#include "../src/data/Paths.h"
 
 void TestAppZoneHistoryStore()
 {

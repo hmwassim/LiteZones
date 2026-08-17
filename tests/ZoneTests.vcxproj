@@ -58,6 +58,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\src\app;..\src\editor;..\src\layout;..\src\data;..\src\platform;..\src\overlay;..\src\utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -77,6 +78,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\src\app;..\src\editor;..\src\layout;..\src\data;..\src\platform;..\src\overlay;..\src\utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,38 +96,39 @@
     <ClCompile Include="JsonTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="ColorsTests.cpp" />
-    <ClCompile Include="..\..\src\litezones\AppZoneHistory.cpp" />
-    <ClCompile Include="..\..\src\litezones\AppliedLayouts.cpp" />
-    <ClCompile Include="..\..\src\litezones\CustomLayouts.cpp" />
-    <ClCompile Include="..\..\src\litezones\GridData.cpp" />
-    <ClCompile Include="..\..\src\litezones\json.cpp" />
-    <ClCompile Include="..\..\src\litezones\LayoutEngine.cpp" />
-    <ClCompile Include="..\..\src\litezones\MonitorManager.cpp" />
-    <ClCompile Include="..\..\src\litezones\Paths.cpp" />
-    <ClCompile Include="..\..\src\litezones\Settings.cpp" />
-    <ClCompile Include="..\..\src\litezones\Colors.cpp" />
-    <ClCompile Include="..\..\src\litezones\GuidUtils.cpp" />
     <ClCompile Include="ZoneNavigation.cpp" />
-    <ClCompile Include="..\..\src\litezones\WindowProperties.cpp" />
-    <ClCompile Include="..\..\src\litezones\Zone.cpp" />
+    <ClCompile Include="..\src\data\AppZoneHistory.cpp" />
+    <ClCompile Include="..\src\data\AppliedLayouts.cpp" />
+    <ClCompile Include="..\src\data\CustomLayouts.cpp" />
+    <ClCompile Include="..\src\editor\GridData.cpp" />
+    <ClCompile Include="..\src\data\json.cpp" />
+    <ClCompile Include="..\src\layout\LayoutEngine.cpp" />
+    <ClCompile Include="..\src\platform\MonitorManager.cpp" />
+    <ClCompile Include="..\src\data\Paths.cpp" />
+    <ClCompile Include="..\src\data\Settings.cpp" />
+    <ClCompile Include="..\src\overlay\Colors.cpp" />
+    <ClCompile Include="..\src\utils\GuidUtils.cpp" />
+    <ClCompile Include="..\src\platform\WindowProperties.cpp" />
+    <ClCompile Include="..\src\layout\Zone.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestHarness.h" />
-    <ClInclude Include="..\..\src\litezones\AppZoneHistory.h" />
-    <ClInclude Include="..\..\src\litezones\AppliedLayouts.h" />
-    <ClInclude Include="..\..\src\litezones\CanvasMath.h" />
-    <ClInclude Include="..\..\src\litezones\CustomLayouts.h" />
-    <ClInclude Include="..\..\src\litezones\GridData.h" />
-    <ClInclude Include="..\..\src\litezones\json.h" />
-    <ClInclude Include="..\..\src\litezones\LayoutEngine.h" />
-    <ClInclude Include="..\..\src\litezones\LayoutTypes.h" />
-    <ClInclude Include="..\..\src\litezones\MonitorManager.h" />
-    <ClInclude Include="..\..\src\litezones\Paths.h" />
-    <ClInclude Include="..\..\src\litezones\Settings.h" />
-    <ClInclude Include="..\..\src\litezones\GuidUtils.h" />
+    <ClInclude Include="..\src\data\AppZoneHistory.h" />
+    <ClInclude Include="..\src\data\AppliedLayouts.h" />
+    <ClInclude Include="..\src\layout\CanvasMath.h" />
+    <ClInclude Include="..\src\data\CustomLayouts.h" />
+    <ClInclude Include="..\src\editor\GridData.h" />
+    <ClInclude Include="..\src\data\json.h" />
+    <ClInclude Include="..\src\layout\LayoutEngine.h" />
+    <ClInclude Include="..\src\layout\LayoutTypes.h" />
+    <ClInclude Include="..\src\layout\LayoutHelpers.h" />
+    <ClInclude Include="..\src\platform\MonitorManager.h" />
+    <ClInclude Include="..\src\data\Paths.h" />
+    <ClInclude Include="..\src\data\Settings.h" />
+    <ClInclude Include="..\src\utils\GuidUtils.h" />
+    <ClInclude Include="..\src\platform\WindowProperties.h" />
+    <ClInclude Include="..\src\layout\Zone.h" />
     <ClInclude Include="ZoneNavigation.h" />
-    <ClInclude Include="..\..\src\litezones\WindowProperties.h" />
-    <ClInclude Include="..\..\src\litezones\Zone.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

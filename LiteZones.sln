@@ -2,9 +2,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LiteZones", "src\litezones\LiteZones.vcxproj", "{5E9D6C1A-3B4A-4C2B-9D1E-0A1B2C3D4E5F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LiteZones", "src\LiteZones.vcxproj", "{5E9D6C1A-3B4A-4C2B-9D1E-0A1B2C3D4E5F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZoneTests", "tests\ZoneTests\ZoneTests.vcxproj", "{2A3B4C5D-6E7F-4A8B-9C0D-1E2F3A4B5C6D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZoneTests", "tests\ZoneTests.vcxproj", "{2A3B4C5D-6E7F-4A8B-9C0D-1E2F3A4B5C6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
