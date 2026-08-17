@@ -104,7 +104,7 @@ bool App::Init()
     m_tray.SetOnEditLayouts([this] { OpenLayoutEditor(); });
     m_tray.SetOnReloadConfig([this] { ReloadConfig(); });
     m_tray.SetOnOpenFolder([this] { OpenConfigFolder(); });
-    m_tray.SetOnExit([this] { PostMessageW(m_hwnd, WM_CLOSE, 0, 0); });
+    m_tray.SetOnExit([this] { SendMessageW(m_hwnd, WM_CLOSE, 0, 0); });
 
     if (!m_tray.AddIcon(m_hwnd, m_hInstance))
     {
@@ -360,7 +360,11 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case kTrayCallbackMessage:
-        if (LOWORD(lParam) == WM_RBUTTONUP || LOWORD(lParam) == WM_LBUTTONUP)
+        if (LOWORD(lParam) == WM_LBUTTONUP)
+        {
+            OpenLayoutEditor();
+        }
+        else if (LOWORD(lParam) == WM_RBUTTONUP)
         {
             m_tray.ShowMenu(m_hwnd, m_snappingEnabled);
         }
