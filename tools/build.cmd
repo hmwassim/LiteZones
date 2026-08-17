@@ -2,16 +2,13 @@
 setlocal EnableExtensions
 
 set "ROOT=%~dp0.."
-set "CONFIG=Release"
+set "CONFIG="
 set "PLATFORM=x64"
 set "MSBUILD="
 
 if /i "%~1"=="Debug" set "CONFIG=Debug"
 if /i "%~1"=="Release" set "CONFIG=Release"
-if defined CONFIG goto have_config
-echo [LiteZones] Usage: build.cmd [Debug^|Release]
-exit /b 1
-:have_config
+if not defined CONFIG set "CONFIG=Release"
 
 rem Locate MSBuild via vswhere (VS 2022 Build Tools / VS installs).
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"

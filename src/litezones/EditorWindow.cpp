@@ -320,7 +320,7 @@ void EditorWindow::PopulateLayoutList()
     }
 
     m_entries.clear();
-    const auto addTemplate = [this](FancyZonesDataTypes::ZoneSetLayoutType type, const wchar_t* name) {
+    const auto addTemplate = [this](LiteZonesTypes::ZoneSetLayoutType type, const wchar_t* name) {
         ListEntry entry;
         entry.isTemplate = true;
         entry.type = type;
@@ -328,18 +328,16 @@ void EditorWindow::PopulateLayoutList()
         entry.name = name;
         m_entries.push_back(entry);
     };
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::Focus, L"Focus");
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::Rows, L"Rows");
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::Columns, L"Columns");
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::Grid, L"Grid");
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid, L"Priority Grid");
-    addTemplate(FancyZonesDataTypes::ZoneSetLayoutType::Blank, L"Blank");
+    addTemplate(LiteZonesTypes::ZoneSetLayoutType::Rows, L"Rows");
+    addTemplate(LiteZonesTypes::ZoneSetLayoutType::Columns, L"Columns");
+    addTemplate(LiteZonesTypes::ZoneSetLayoutType::Grid, L"Grid");
+    addTemplate(LiteZonesTypes::ZoneSetLayoutType::PriorityGrid, L"Priority Grid");
 
     for (const auto& [uuid, data] : CustomLayouts::instance().AllLayouts())
     {
         ListEntry entry;
         entry.isTemplate = false;
-        entry.type = FancyZonesDataTypes::ZoneSetLayoutType::Custom;
+        entry.type = LiteZonesTypes::ZoneSetLayoutType::Custom;
         entry.uuid = uuid;
         entry.name = data.name;
         m_entries.push_back(entry);
@@ -432,12 +430,8 @@ void EditorWindow::OnSelectionChanged()
     {
         if (const auto* data = EnsureWorkingCopy(entry.uuid))
         {
-            spacingEditable = data->type == FancyZonesDataTypes::CustomLayoutType::Grid;
+            spacingEditable = data->type == LiteZonesTypes::CustomLayoutType::Grid;
         }
-        zoneCountEditable = false;
-    }
-    else if (entry.type == FancyZonesDataTypes::ZoneSetLayoutType::Blank)
-    {
         zoneCountEditable = false;
     }
     if (m_spacingEdit)
@@ -473,29 +467,26 @@ void EditorWindow::UpdateCanvasPreview()
 
     if (entry.isTemplate)
     {
-        if (entry.type != FancyZonesDataTypes::ZoneSetLayoutType::Blank)
-        {
-            LayoutData layout;
-            layout.type = entry.type;
-            layout.showSpacing = DefaultValues::ShowSpacing;
-            layout.spacing = m_spacingValue;
-            layout.zoneCount = m_zoneCountValue;
-            layout.sensitivityRadius = DefaultValues::SensitivityRadius;
+        LayoutData layout;
+        layout.type = entry.type;
+        layout.showSpacing = DefaultValues::ShowSpacing;
+        layout.spacing = m_spacingValue;
+        layout.zoneCount = m_zoneCountValue;
+        layout.sensitivityRadius = DefaultValues::SensitivityRadius;
 
-            Layout renderer(layout);
-            if (renderer.Init(monitorRect, nullptr))
+        Layout renderer(layout);
+        if (renderer.Init(monitorRect, nullptr))
+        {
+            for (const auto& [zoneIndex, zone] : renderer.Zones())
             {
-                for (const auto& [zoneIndex, zone] : renderer.Zones())
-                {
-                    const RECT rect = zone.GetZoneRect();
-                    zones.push_back(EditorCanvas::ZoneRect{ rect, static_cast<int>(zoneIndex) });
-                }
+                const RECT rect = zone.GetZoneRect();
+                zones.push_back(EditorCanvas::ZoneRect{ rect, static_cast<int>(zoneIndex) });
             }
         }
     }
     else if (auto* data = EnsureWorkingCopy(entry.uuid))
     {
-        if (data->type == FancyZonesDataTypes::CustomLayoutType::Canvas)
+        if (data->type == LiteZonesTypes::CustomLayoutType::Canvas)
         {
             EditorCanvas::SetCanvasEdit(m_canvas, &data->canvas);
             return;
@@ -525,7 +516,7 @@ void EditorWindow::UpdateSpacingControl()
         {
             if (const auto* data = EnsureWorkingCopy(entry.uuid))
             {
-                if (data->type == FancyZonesDataTypes::CustomLayoutType::Grid)
+                if (data->type == LiteZonesTypes::CustomLayoutType::Grid)
                 {
                     spacing = data->grid.spacing();
                 }
@@ -559,10 +550,10 @@ void EditorWindow::OnSpacingChanged()
         {
             if (auto* data = EnsureWorkingCopy(entry.uuid))
             {
-                if (data->type == FancyZonesDataTypes::CustomLayoutType::Grid)
+                if (data->type == LiteZonesTypes::CustomLayoutType::Grid)
                 {
-                    data->grid.m_showSpacing = value > 0;
-                    data->grid.m_spacing = value;
+                    data->grid.setShowSpacing(value > 0);
+                    data->grid.setSpacing(value);
                 }
             }
         }
@@ -587,14 +578,10 @@ void EditorWindow::UpdateZoneCountControl()
         {
             if (const auto* data = EnsureWorkingCopy(entry.uuid))
             {
-                zoneCount = data->type == FancyZonesDataTypes::CustomLayoutType::Grid
+                zoneCount = data->type == LiteZonesTypes::CustomLayoutType::Grid
                                 ? data->grid.zoneCount()
                                 : static_cast<int>(data->canvas.zones.size());
             }
-        }
-        else if (entry.type == FancyZonesDataTypes::ZoneSetLayoutType::Blank)
-        {
-            zoneCount = 0;
         }
     }
 
@@ -644,7 +631,7 @@ void EditorWindow::UpdateHint()
     {
         if (const auto* data = EnsureWorkingCopy(entry.uuid))
         {
-            if (data->type == FancyZonesDataTypes::CustomLayoutType::Grid)
+            if (data->type == LiteZonesTypes::CustomLayoutType::Grid)
             {
                 SetWindowTextW(m_staticHint,
                                L"Grid: drag separators to resize; double-click to split; "
@@ -668,7 +655,7 @@ void EditorWindow::NotifyChanged()
     }
 }
 
-FancyZonesDataTypes::CustomLayoutData* EditorWindow::EnsureWorkingCopy(const GUID& uuid)
+LiteZonesTypes::CustomLayoutData* EditorWindow::EnsureWorkingCopy(const GUID& uuid)
 {
     const auto it = m_workingCopies.find(uuid);
     if (it != m_workingCopies.end())
@@ -705,25 +692,25 @@ void EditorWindow::OnNewLayout()
     GUID uuid = GUID_NULL;
     CoCreateGuid(&uuid);
 
-    FancyZonesDataTypes::CustomLayoutData data;
+    LiteZonesTypes::CustomLayoutData data;
     data.name = result.name.empty() ? L"Custom Layout" : result.name;
     data.name = MakeUniqueName(data.name);
     if (result.grid)
     {
-        data.type = FancyZonesDataTypes::CustomLayoutType::Grid;
+        data.type = LiteZonesTypes::CustomLayoutType::Grid;
         const int r = std::max(1, result.rows);
         const int c = std::max(1, result.columns);
         data.grid = LayoutHelpers::MakeGridLayout(r, c);
     }
     else
     {
-        data.type = FancyZonesDataTypes::CustomLayoutType::Canvas;
+        data.type = LiteZonesTypes::CustomLayoutType::Canvas;
         int width = 0;
         int height = 0;
         GetPrimaryWorkArea(width, height);
         data.canvas.lastWorkAreaWidth = width;
         data.canvas.lastWorkAreaHeight = height;
-        data.canvas.zones.push_back(FancyZonesDataTypes::CanvasLayoutInfo::Rect{ 0, 0, width, height });
+        data.canvas.zones.push_back(LiteZonesTypes::CanvasLayoutInfo::Rect{ 0, 0, width, height });
         data.canvas.sensitivityRadius = DefaultValues::SensitivityRadius;
     }
 
@@ -749,28 +736,25 @@ void EditorWindow::OnDuplicate()
 
     if (entry.isTemplate)
     {
-        FancyZonesDataTypes::CustomLayoutData data;
+        LiteZonesTypes::CustomLayoutData data;
         data.name = MakeUniqueName(std::wstring(entry.name) + L" (copy)");
-        data.type = FancyZonesDataTypes::CustomLayoutType::Grid;
+        data.type = LiteZonesTypes::CustomLayoutType::Grid;
 
         int rows = 1;
         int columns = 1;
         switch (entry.type)
         {
-        case FancyZonesDataTypes::ZoneSetLayoutType::Focus:
-            columns = 3;
-            break;
-        case FancyZonesDataTypes::ZoneSetLayoutType::Rows:
+        case LiteZonesTypes::ZoneSetLayoutType::Rows:
             rows = 3;
             break;
-        case FancyZonesDataTypes::ZoneSetLayoutType::Columns:
+        case LiteZonesTypes::ZoneSetLayoutType::Columns:
             columns = 3;
             break;
-        case FancyZonesDataTypes::ZoneSetLayoutType::Grid:
+        case LiteZonesTypes::ZoneSetLayoutType::Grid:
             rows = 2;
             columns = 2;
             break;
-        case FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid:
+        case LiteZonesTypes::ZoneSetLayoutType::PriorityGrid:
             rows = 2;
             columns = 3;
             break;
@@ -793,7 +777,7 @@ void EditorWindow::OnDuplicate()
             return;
         }
 
-        FancyZonesDataTypes::CustomLayoutData copy = *data;
+        LiteZonesTypes::CustomLayoutData copy = *data;
         copy.name = MakeUniqueName(copy.name);
 
         if (!CustomLayouts::instance().AddLayout(uuid, copy))
@@ -850,7 +834,7 @@ void EditorWindow::OnRename()
         return;
     }
 
-    FancyZonesDataTypes::CustomLayoutData updated = *data;
+    LiteZonesTypes::CustomLayoutData updated = *data;
     updated.name = name;
     if (!CustomLayouts::instance().AddLayout(entry.uuid, updated))
     {
@@ -873,7 +857,7 @@ bool EditorWindow::BuildApplyLayout(int listIndex, LayoutData& out) const
         out.type = entry.type;
         out.showSpacing = DefaultValues::ShowSpacing;
         out.spacing = m_spacingValue;
-        out.zoneCount = (entry.type == FancyZonesDataTypes::ZoneSetLayoutType::Blank) ? 0 : m_zoneCountValue;
+        out.zoneCount = m_zoneCountValue;
         out.sensitivityRadius = DefaultValues::SensitivityRadius;
         return true;
     }
@@ -893,8 +877,8 @@ bool EditorWindow::BuildApplyLayout(int listIndex, LayoutData& out) const
 
     out = LayoutData{};
     out.uuid = entry.uuid;
-    out.type = FancyZonesDataTypes::ZoneSetLayoutType::Custom;
-    if (it->second.type == FancyZonesDataTypes::CustomLayoutType::Grid)
+    out.type = LiteZonesTypes::ZoneSetLayoutType::Custom;
+    if (it->second.type == LiteZonesTypes::CustomLayoutType::Grid)
     {
         const auto& grid = it->second.grid;
         out.sensitivityRadius = grid.sensitivityRadius();
@@ -923,7 +907,7 @@ void EditorWindow::OnApply()
     const int listIndex = SelectedListIndex();
     if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
     {
-        if (FancyZonesDataTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
+        if (LiteZonesTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
         {
             CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
         }
@@ -945,7 +929,7 @@ void EditorWindow::OnApplyAll()
     const int listIndex = SelectedListIndex();
     if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
     {
-        if (FancyZonesDataTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
+        if (LiteZonesTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
         {
             CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
         }
@@ -994,7 +978,7 @@ void EditorWindow::OnSave()
     const int listIndex = SelectedListIndex();
     if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
     {
-        if (FancyZonesDataTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
+        if (LiteZonesTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
         {
             CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
         }
@@ -1094,7 +1078,7 @@ void EditorWindow::SelectActiveLayout()
                 for (size_t j = 0; j < m_entries.size(); ++j)
                 {
                     bool match = false;
-                    if (applied.type == FancyZonesDataTypes::ZoneSetLayoutType::Custom)
+                    if (applied.type == LiteZonesTypes::ZoneSetLayoutType::Custom)
                     {
                         match = !m_entries[j].isTemplate && IsEqualGUID(m_entries[j].uuid, applied.uuid);
                     }

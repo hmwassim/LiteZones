@@ -45,7 +45,7 @@ namespace
         int dragResizer = -1;
         int dragLastMultiplier = 0;
 
-        FancyZonesDataTypes::CanvasLayoutInfo* canvasModel = nullptr;
+        LiteZonesTypes::CanvasLayoutInfo* canvasModel = nullptr;
         int selectedCanvasZone = -1;
         CanvasInteraction canvasInteraction = CanvasInteraction::None;
         int canvasResizeHandle = CanvasMath::None;
@@ -55,7 +55,7 @@ namespace
         bool canvasDrawing = false;
 
         // Pre-drag snapshot for grid resizer cancel-revert.
-        FancyZonesDataTypes::GridLayoutInfo gridSnapshot{};
+        LiteZonesTypes::GridLayoutInfo gridSnapshot{};
 
         // Callback fired on every committed edit (drag-end, split, merge, delete).
         std::function<void()> onEdited;
@@ -758,7 +758,7 @@ namespace
                     {
                         NotifyBeforeEdit();
                         ClampToCanvas(rect, view);
-                        view.canvasModel->zones.push_back(FancyZonesDataTypes::CanvasLayoutInfo::Rect{
+                        view.canvasModel->zones.push_back(LiteZonesTypes::CanvasLayoutInfo::Rect{
                             rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
                         });
                         view.selectedCanvasZone = static_cast<int>(view.canvasModel->zones.size()) - 1;
@@ -1027,7 +1027,7 @@ namespace EditorCanvas
         InvalidateRect(hwnd, nullptr, TRUE);
     }
 
-    void SetCanvasEdit(HWND hwnd, FancyZonesDataTypes::CanvasLayoutInfo* model)
+    void SetCanvasEdit(HWND hwnd, LiteZonesTypes::CanvasLayoutInfo* model)
     {
         CanvasView& view = View();
         view.mode = Mode::CanvasEdit;

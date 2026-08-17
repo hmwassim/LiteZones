@@ -30,7 +30,7 @@ namespace
     const std::wstring kWidth = L"width";
     const std::wstring kHeight = L"height";
 
-    // Parses a percent array into 0..10000 units. Accepts both the FancyZones
+    // Parses a percent array into 0..10000 units. Accepts both the
     // 0..10000 form and a plain 0..100 form (auto-detected by the total), then
     // forces the integer sum to be exactly 10000 by adjusting the last element.
     bool ParsePercents(const Json& arr, std::vector<int>& out)
@@ -82,7 +82,7 @@ namespace
         return true;
     }
 
-    bool ParseGridInfo(const Json& info, FancyZonesDataTypes::GridLayoutInfo& out)
+    bool ParseGridInfo(const Json& info, LiteZonesTypes::GridLayoutInfo& out)
     {
         const int rows = static_cast<int>(info.At(kRows).AsNumber());
         const int columns = static_cast<int>(info.At(kColumns).AsNumber());
@@ -130,13 +130,13 @@ namespace
             map.push_back(std::move(cells));
         }
 
-        FancyZonesDataTypes::GridLayoutInfo infoOut(rows, columns);
+        LiteZonesTypes::GridLayoutInfo infoOut(rows, columns);
         infoOut.rowsPercents() = std::move(rowPercents);
         infoOut.columnsPercents() = std::move(columnPercents);
         infoOut.cellChildMap() = std::move(map);
-        infoOut.m_showSpacing = info.At(kShowSpacing).AsBool(DefaultValues::ShowSpacing);
-        infoOut.m_spacing = static_cast<int>(info.At(kSpacing).AsNumber(DefaultValues::Spacing));
-        infoOut.m_sensitivityRadius = static_cast<int>(info.At(kSensitivityRadius).AsNumber(DefaultValues::SensitivityRadius));
+        infoOut.setShowSpacing(info.At(kShowSpacing).AsBool(DefaultValues::ShowSpacing));
+        infoOut.setSpacing(static_cast<int>(info.At(kSpacing).AsNumber(DefaultValues::Spacing)));
+        infoOut.setSensitivityRadius(static_cast<int>(info.At(kSensitivityRadius).AsNumber(DefaultValues::SensitivityRadius)));
 
         // Child indices must be contiguous 0..maxChild (each cell references an
         // existing zone), which the zone-count invariant below captures.
@@ -149,7 +149,7 @@ namespace
         return true;
     }
 
-    bool ParseCanvasInfo(const Json& info, FancyZonesDataTypes::CanvasLayoutInfo& out)
+    bool ParseCanvasInfo(const Json& info, LiteZonesTypes::CanvasLayoutInfo& out)
     {
         const int refWidth = static_cast<int>(info.At(kRefWidth).AsNumber());
         const int refHeight = static_cast<int>(info.At(kRefHeight).AsNumber());
@@ -164,7 +164,7 @@ namespace
             return false;
         }
 
-        FancyZonesDataTypes::CanvasLayoutInfo infoOut;
+        LiteZonesTypes::CanvasLayoutInfo infoOut;
         infoOut.lastWorkAreaWidth = refWidth;
         infoOut.lastWorkAreaHeight = refHeight;
         for (size_t i = 0; i < zones.Size(); ++i)
@@ -174,7 +174,7 @@ namespace
             {
                 return false;
             }
-            FancyZonesDataTypes::CanvasLayoutInfo::Rect rect;
+            LiteZonesTypes::CanvasLayoutInfo::Rect rect;
             rect.x = static_cast<int>(zone.At(kX).AsNumber());
             rect.y = static_cast<int>(zone.At(kY).AsNumber());
             rect.width = static_cast<int>(zone.At(kWidth).AsNumber());
@@ -191,7 +191,7 @@ namespace
         return true;
     }
 
-    Json SerializeGridInfo(const FancyZonesDataTypes::GridLayoutInfo& grid)
+    Json SerializeGridInfo(const LiteZonesTypes::GridLayoutInfo& grid)
     {
         Json info = Json::MakeObject();
         info.Set(kRows, static_cast<double>(grid.rows()));
@@ -229,7 +229,7 @@ namespace
         return info;
     }
 
-    Json SerializeCanvasInfo(const FancyZonesDataTypes::CanvasLayoutInfo& canvas)
+    Json SerializeCanvasInfo(const LiteZonesTypes::CanvasLayoutInfo& canvas)
     {
         Json info = Json::MakeObject();
         info.Set(kRefWidth, static_cast<double>(canvas.lastWorkAreaWidth));
@@ -305,12 +305,12 @@ void CustomLayouts::LoadData()
                 continue;
             }
 
-            FancyZonesDataTypes::CustomLayoutData data;
+            LiteZonesTypes::CustomLayoutData data;
             data.name = name;
             const std::wstring type = entry.At(kType).AsString();
             if (type == kGridType)
             {
-                data.type = FancyZonesDataTypes::CustomLayoutType::Grid;
+                data.type = LiteZonesTypes::CustomLayoutType::Grid;
                 if (!ParseGridInfo(info, data.grid))
                 {
                     continue;
@@ -318,7 +318,7 @@ void CustomLayouts::LoadData()
             }
             else if (type == kCanvasType)
             {
-                data.type = FancyZonesDataTypes::CustomLayoutType::Canvas;
+                data.type = LiteZonesTypes::CustomLayoutType::Canvas;
                 if (!ParseCanvasInfo(info, data.canvas))
                 {
                     continue;
@@ -346,7 +346,7 @@ void CustomLayouts::SaveData() const
         Json entry = Json::MakeObject();
         entry.Set(kUuid, Util::GuidToString(uuid));
         entry.Set(kName, data.name);
-        if (data.type == FancyZonesDataTypes::CustomLayoutType::Grid)
+        if (data.type == LiteZonesTypes::CustomLayoutType::Grid)
         {
             entry.Set(kType, kGridType);
             entry.Set(kInfo, SerializeGridInfo(data.grid));
@@ -373,8 +373,8 @@ std::optional<LayoutData> CustomLayouts::GetLayout(const GUID& uuid) const
 
     LayoutData layout;
     layout.uuid = uuid;
-    layout.type = FancyZonesDataTypes::ZoneSetLayoutType::Custom;
-    if (it->second.type == FancyZonesDataTypes::CustomLayoutType::Grid)
+    layout.type = LiteZonesTypes::ZoneSetLayoutType::Custom;
+    if (it->second.type == LiteZonesTypes::CustomLayoutType::Grid)
     {
         const auto& grid = it->second.grid;
         layout.sensitivityRadius = grid.sensitivityRadius();
@@ -391,13 +391,13 @@ std::optional<LayoutData> CustomLayouts::GetLayout(const GUID& uuid) const
     return layout;
 }
 
-const FancyZonesDataTypes::CustomLayoutData* CustomLayouts::GetCustomLayoutData(const GUID& uuid) const
+const LiteZonesTypes::CustomLayoutData* CustomLayouts::GetCustomLayoutData(const GUID& uuid) const
 {
     const auto it = m_layouts.find(uuid);
     return it == m_layouts.end() ? nullptr : &it->second;
 }
 
-bool CustomLayouts::AddLayout(const GUID& uuid, const FancyZonesDataTypes::CustomLayoutData& data)
+bool CustomLayouts::AddLayout(const GUID& uuid, const LiteZonesTypes::CustomLayoutData& data)
 {
     if (data.name.empty())
     {

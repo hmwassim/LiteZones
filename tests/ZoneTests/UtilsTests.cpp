@@ -3,7 +3,7 @@
 #include "../../src/litezones/GuidUtils.h"
 #include "../../src/litezones/LayoutHelpers.h"
 #include "../../src/litezones/MonitorManager.h"
-#include "../../src/litezones/ZoneNavigation.h"
+#include "ZoneNavigation.h"
 
 void TestMonitorOrdering()
 {
@@ -72,13 +72,13 @@ void TestChooseNextZoneByPosition()
 void TestLayoutHelpers()
 {
     LayoutData def = LayoutHelpers::MakeDefaultLayout();
-    CHECK(def.type == FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid);
+    CHECK(def.type == LiteZonesTypes::ZoneSetLayoutType::PriorityGrid);
     CHECK(def.zoneCount == DefaultValues::ZoneCount);
     CHECK(def.showSpacing == DefaultValues::ShowSpacing);
     CHECK(def.spacing == DefaultValues::Spacing);
     CHECK(def.sensitivityRadius == DefaultValues::SensitivityRadius);
 
-    FancyZonesDataTypes::GridLayoutInfo grid3x2 = LayoutHelpers::MakeGridLayout(3, 2);
+    LiteZonesTypes::GridLayoutInfo grid3x2 = LayoutHelpers::MakeGridLayout(3, 2);
     CHECK(grid3x2.rows() == 3);
     CHECK(grid3x2.columns() == 2);
     CHECK(grid3x2.zoneCount() == 6);
@@ -92,7 +92,7 @@ void TestLayoutHelpers()
     CHECK(grid3x2.spacing() == DefaultValues::Spacing);
     CHECK(grid3x2.sensitivityRadius() == DefaultValues::SensitivityRadius);
 
-    FancyZonesDataTypes::GridLayoutInfo grid1x1 = LayoutHelpers::MakeGridLayout(1, 1);
+    LiteZonesTypes::GridLayoutInfo grid1x1 = LayoutHelpers::MakeGridLayout(1, 1);
     CHECK(grid1x1.zoneCount() == 1);
     CHECK(grid1x1.rowsPercents()[0] == 10000);
     CHECK(grid1x1.columnsPercents()[0] == 10000);

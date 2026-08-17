@@ -1,6 +1,6 @@
 # LiteZones
 
-A lightweight tiling window manager for Windows. Single native C++17 executable with zero runtime dependencies.
+A lightweight zone-snapping tool for Windows. Single native C++17 executable with zero runtime dependencies.
 
 ## Features
 
@@ -73,9 +73,7 @@ All config lives in `%LOCALAPPDATA%\LiteZones\`.
   "mouseSwitch": false,
   "mouseMiddleClickSpanningMultipleZones": false,
   "moveWindowAcrossMonitors": false,
-  "snapToAppZoneOnOpen": false,
   "restoreSize": true,
-  "openWindowOnActiveMonitor": false,
   "spanZonesAcrossMonitors": false,
   "makeDraggedWindowTransparent": false,
   "showZoneNumber": true,
@@ -95,9 +93,7 @@ All config lives in `%LOCALAPPDATA%\LiteZones\`.
 | `mouseSwitch` | `false` | Right-click activates zone snapping (XOR with Shift) |
 | `mouseMiddleClickSpanningMultipleZones` | `false` | Middle-click enables multi-zone spanning |
 | `moveWindowAcrossMonitors` | `false` | Allow dragging windows across monitors |
-| `snapToAppZoneOnOpen` | `false` | Auto-snap new windows to their last-used zone |
 | `restoreSize` | `true` | Restore window size when unsnapping |
-| `openWindowOnActiveMonitor` | `false` | Open new windows on the active monitor |
 | `spanZonesAcrossMonitors` | `false` | Combine all monitors into a single work area |
 | `makeDraggedWindowTransparent` | `false` | 50% alpha on dragged windows |
 | `showZoneNumber` | `true` | Display zone numbers in the overlay |

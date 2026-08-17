@@ -10,8 +10,6 @@
 #include "MonitorManager.h"
 #include "Paths.h"
 #include "Settings.h"
-#include "WindowProcessing.h"
-#include "WindowProperties.h"
 #include "WindowUtils.h"
 #include "resource.h"
 
@@ -27,13 +25,11 @@ namespace
     std::vector<LayoutData> BuildLayoutCycleCandidates()
     {
         std::vector<LayoutData> candidates;
-        const std::vector<FancyZonesDataTypes::ZoneSetLayoutType> templates = {
-            FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid,
-            FancyZonesDataTypes::ZoneSetLayoutType::Grid,
-            FancyZonesDataTypes::ZoneSetLayoutType::Rows,
-            FancyZonesDataTypes::ZoneSetLayoutType::Columns,
-            FancyZonesDataTypes::ZoneSetLayoutType::Focus,
-            FancyZonesDataTypes::ZoneSetLayoutType::Blank,
+        const std::vector<LiteZonesTypes::ZoneSetLayoutType> templates = {
+            LiteZonesTypes::ZoneSetLayoutType::PriorityGrid,
+            LiteZonesTypes::ZoneSetLayoutType::Grid,
+            LiteZonesTypes::ZoneSetLayoutType::Rows,
+            LiteZonesTypes::ZoneSetLayoutType::Columns,
         };
         for (const auto type : templates)
         {
@@ -103,7 +99,7 @@ bool App::Init()
     }
 
     m_dragController = std::make_unique<DragController>(m_workAreaManager, Settings::instance().data);
-    m_hooks = std::make_unique<Hooks>(m_hwnd, Settings::instance().data);
+    m_hooks = std::make_unique<Hooks>(m_hwnd);
     if (!m_hooks->Start())
     {
         return false;
@@ -305,29 +301,6 @@ void App::HandleWindowDestroyed(HWND window)
     }
 }
 
-void App::HandleWindowCreated(HWND window)
-{
-    if (!m_snappingEnabled)
-    {
-        return;
-    }
-
-    if (!WindowProcessing::IsProcessableManually(window, Settings::instance().data))
-    {
-        return;
-    }
-
-    if (!RetrieveZoneIndexProperty(window).ToIndexSet().empty())
-    {
-        return;
-    }
-
-    // Windows already remembers window placement via SetWindowPlacement (called
-    // by SizeWindowToRect during snap). Let it restore the position natively
-    // instead of overriding with process-path-based history, which breaks
-    // multi-window apps (e.g. Chrome profiles sharing the same chrome.exe).
-}
-
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     App* self = reinterpret_cast<App*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -412,10 +385,6 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             m_dragController->OnMouseButtonChanged(static_cast<UINT>(wParam), lParam != 0);
         }
-        return 0;
-
-    case WM_PRIV_WINDOWCREATED:
-        HandleWindowCreated(reinterpret_cast<HWND>(wParam));
         return 0;
 
     case WM_DESTROY:

@@ -10,14 +10,14 @@ namespace LayoutHelpers
     inline LayoutData MakeDefaultLayout()
     {
         LayoutData layout;
-        layout.type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
+        layout.type = LiteZonesTypes::ZoneSetLayoutType::PriorityGrid;
         layout.zoneCount = DefaultValues::ZoneCount;
         return layout;
     }
 
-    inline FancyZonesDataTypes::GridLayoutInfo MakeGridLayout(int rows, int cols)
+    inline LiteZonesTypes::GridLayoutInfo MakeGridLayout(int rows, int cols)
     {
-        FancyZonesDataTypes::GridLayoutInfo grid(rows, cols);
+        LiteZonesTypes::GridLayoutInfo grid(rows, cols);
         const int rowPct = 10000 / rows;
         const int colPct = 10000 / cols;
         for (int i = 0; i < rows; ++i)
@@ -38,9 +38,9 @@ namespace LayoutHelpers
                 grid.cellChildMap()[row][col] = zoneIndex++;
             }
         }
-        grid.m_showSpacing = DefaultValues::ShowSpacing;
-        grid.m_spacing = DefaultValues::Spacing;
-        grid.m_sensitivityRadius = DefaultValues::SensitivityRadius;
+        grid.setShowSpacing(DefaultValues::ShowSpacing);
+        grid.setSpacing(DefaultValues::Spacing);
+        grid.setSensitivityRadius(DefaultValues::SensitivityRadius);
         return grid;
     }
 

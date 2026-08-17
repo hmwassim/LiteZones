@@ -6,9 +6,9 @@
 void TestGridDataZones()
 {
     GridLayoutInfo model(2, 2);
-    model.m_rowsPercents = { 5000, 5000 };
-    model.m_columnsPercents = { 5000, 5000 };
-    model.m_cellChildMap = { { 0, 1 }, { 2, 3 } };
+    model.rowsPercents() = { 5000, 5000 };
+    model.columnsPercents() = { 5000, 5000 };
+    model.cellChildMap() = { { 0, 1 }, { 2, 3 } };
 
     GridData::Grid grid(model);
     CHECK(grid.Zones().size() == 4);
@@ -29,12 +29,12 @@ void TestGridDataZones()
 void TestGridDataDrag()
 {
     GridLayoutInfo model(2, 2);
-    model.m_rowsPercents = { 5000, 5000 };
-    model.m_columnsPercents = { 5000, 5000 };
-    model.m_cellChildMap = { { 0, 1 }, { 2, 3 } };
-    model.m_showSpacing = true;
-    model.m_spacing = 16;
-    model.m_sensitivityRadius = 20;
+    model.rowsPercents() = { 5000, 5000 };
+    model.columnsPercents() = { 5000, 5000 };
+    model.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+    model.setShowSpacing(true);
+    model.setSpacing(16);
+    model.setSensitivityRadius(20);
 
     GridData::Grid grid(model);
     CHECK(grid.CanDrag(1, 1000));
@@ -43,9 +43,9 @@ void TestGridDataDrag()
     const std::vector<int> expectedRows = { 5000, 5000 };
     CHECK(model.columnsPercents() == expectedColumns);
     CHECK(model.rowsPercents() == expectedRows);
-    CHECK(model.m_showSpacing);
-    CHECK(model.m_spacing == 16);
-    CHECK(model.m_sensitivityRadius == 20);
+    CHECK(model.showSpacing());
+    CHECK(model.spacing() == 16);
+    CHECK(model.sensitivityRadius() == 20);
 
     CHECK(!grid.CanDrag(1, 5000));
     CHECK(grid.CanDrag(1, 3999));
@@ -58,12 +58,12 @@ void TestGridDataDrag()
 void TestGridDataSplit()
 {
     GridLayoutInfo model(1, 1);
-    model.m_rowsPercents = { 10000 };
-    model.m_columnsPercents = { 10000 };
-    model.m_cellChildMap = { { 0 } };
-    model.m_showSpacing = true;
-    model.m_spacing = 16;
-    model.m_sensitivityRadius = 20;
+    model.rowsPercents() = { 10000 };
+    model.columnsPercents() = { 10000 };
+    model.cellChildMap() = { { 0 } };
+    model.setShowSpacing(true);
+    model.setSpacing(16);
+    model.setSensitivityRadius(20);
 
     GridData::Grid grid(model);
     CHECK(grid.Zones().size() == 1);
@@ -74,12 +74,12 @@ void TestGridDataSplit()
     const std::vector<int> expectedRowsSplit = { 5000, 5000 };
     const std::vector<int> expectedColsSplit = { 10000 };
     const std::vector<std::vector<int>> expectedMapSplit = { { 0 }, { 1 } };
-    CHECK(model.m_rowsPercents == expectedRowsSplit);
-    CHECK(model.m_columnsPercents == expectedColsSplit);
-    CHECK(model.m_cellChildMap == expectedMapSplit);
-    CHECK(model.m_showSpacing);
-    CHECK(model.m_spacing == 16);
-    CHECK(model.m_sensitivityRadius == 20);
+    CHECK(model.rowsPercents() == expectedRowsSplit);
+    CHECK(model.columnsPercents() == expectedColsSplit);
+    CHECK(model.cellChildMap() == expectedMapSplit);
+    CHECK(model.showSpacing());
+    CHECK(model.spacing() == 16);
+    CHECK(model.sensitivityRadius() == 20);
 
     CHECK(!grid.CanSplit(0, 0, GridData::Orientation::Horizontal));
     CHECK(grid.CanSplit(0, 2500, GridData::Orientation::Horizontal));
@@ -90,9 +90,9 @@ void TestGridDataSplit()
 void TestGridDataSplit2x2()
 {
     GridLayoutInfo model(1, 1);
-    model.m_rowsPercents = { 10000 };
-    model.m_columnsPercents = { 10000 };
-    model.m_cellChildMap = { { 0 } };
+    model.rowsPercents() = { 10000 };
+    model.columnsPercents() = { 10000 };
+    model.cellChildMap() = { { 0 } };
 
     GridData::Grid grid(model);
     grid.Split2x2(0);
@@ -101,17 +101,17 @@ void TestGridDataSplit2x2()
     CHECK(model.columns() == 2);
     const std::vector<int> expectedHalves = { 5000, 5000 };
     const std::vector<std::vector<int>> expectedMap2x2 = { { 0, 1 }, { 2, 3 } };
-    CHECK(model.m_rowsPercents == expectedHalves);
-    CHECK(model.m_columnsPercents == expectedHalves);
-    CHECK(model.m_cellChildMap == expectedMap2x2);
+    CHECK(model.rowsPercents() == expectedHalves);
+    CHECK(model.columnsPercents() == expectedHalves);
+    CHECK(model.cellChildMap() == expectedMap2x2);
 }
 
 void TestGridDataMerge()
 {
     GridLayoutInfo model(2, 2);
-    model.m_rowsPercents = { 5000, 5000 };
-    model.m_columnsPercents = { 5000, 5000 };
-    model.m_cellChildMap = { { 0, 1 }, { 2, 3 } };
+    model.rowsPercents() = { 5000, 5000 };
+    model.columnsPercents() = { 5000, 5000 };
+    model.cellChildMap() = { { 0, 1 }, { 2, 3 } };
 
     GridData::Grid grid(model);
     CHECK(grid.MergeClosureIndices({ 1 }).size() == 1);
@@ -122,13 +122,13 @@ void TestGridDataMerge()
     CHECK(model.rows() == 2);
     CHECK(model.columns() == 2);
     const std::vector<std::vector<int>> expectedMapMerged = { { 0, 0 }, { 1, 2 } };
-    CHECK(model.m_cellChildMap == expectedMapMerged);
+    CHECK(model.cellChildMap() == expectedMapMerged);
     CHECK(grid.BoundarySegments().size() == 3);
 
     GridLayoutInfo modelAll(2, 2);
-    modelAll.m_rowsPercents = { 5000, 5000 };
-    modelAll.m_columnsPercents = { 5000, 5000 };
-    modelAll.m_cellChildMap = { { 0, 1 }, { 2, 3 } };
+    modelAll.rowsPercents() = { 5000, 5000 };
+    modelAll.columnsPercents() = { 5000, 5000 };
+    modelAll.cellChildMap() = { { 0, 1 }, { 2, 3 } };
     GridData::Grid gridAll(modelAll);
     gridAll.DoMerge({ 0, 1, 2, 3 });
     CHECK(gridAll.Zones().size() == 1);
@@ -136,9 +136,9 @@ void TestGridDataMerge()
     CHECK(modelAll.columns() == 1);
     const std::vector<int> expectedFull = { 10000 };
     const std::vector<std::vector<int>> expectedMapSingle = { { 0 } };
-    CHECK(modelAll.m_rowsPercents == expectedFull);
-    CHECK(modelAll.m_columnsPercents == expectedFull);
-    CHECK(modelAll.m_cellChildMap == expectedMapSingle);
+    CHECK(modelAll.rowsPercents() == expectedFull);
+    CHECK(modelAll.columnsPercents() == expectedFull);
+    CHECK(modelAll.cellChildMap() == expectedMapSingle);
 }
 
 void TestCanvasMath()

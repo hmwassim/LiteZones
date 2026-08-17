@@ -9,7 +9,6 @@ struct SettingsData
     bool mouseSwitch = false;
     bool mouseMiddleClickSpanningMultipleZones = false;
     bool moveWindowAcrossMonitors = false;
-    bool snapToAppZoneOnOpen = false;
     bool restoreSize = true;
     bool spanZonesAcrossMonitors = false;
     bool makeDraggedWindowTransparent = false;
@@ -20,7 +19,6 @@ struct SettingsData
     std::wstring zoneBorderColor = L"#FFFFFF";
     std::wstring zoneHighlightColor = L"#FFFFFF";
     std::wstring zoneNumberColor = L"#000000";
-    std::wstring overlappingZonesAlgorithm = L"closestCenter";
 
     std::vector<std::wstring> excludedApps;
 };

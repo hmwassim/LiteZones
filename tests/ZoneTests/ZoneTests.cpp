@@ -1,4 +1,4 @@
-// Zone/Layout geometry tests ported from PowerToys FancyZonesTests
+// Zone/Layout geometry tests
 // (Zone.Spec.cpp, Layout.Spec.cpp), plus a tiny assert harness. No third-party
 // test framework. Exit code 0 = all passed.
 
@@ -13,6 +13,7 @@ void RunEditorTests();
 void RunStoreTests();
 void RunJsonTests();
 void RunUtilsTests();
+void RunColorsTests();
 
 int main()
 {
@@ -22,6 +23,7 @@ int main()
     RunStoreTests();
     RunJsonTests();
     RunUtilsTests();
+    RunColorsTests();
 
     if (g_failures == 0)
     {

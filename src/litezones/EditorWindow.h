@@ -37,7 +37,7 @@ private:
     struct ListEntry
     {
         bool isTemplate = false;
-        FancyZonesDataTypes::ZoneSetLayoutType type = FancyZonesDataTypes::ZoneSetLayoutType::Blank;
+        LiteZonesTypes::ZoneSetLayoutType type = LiteZonesTypes::ZoneSetLayoutType::Rows;
         GUID uuid = GUID_NULL;
         std::wstring name;
     };
@@ -84,7 +84,7 @@ private:
     int SelectedListIndex() const;
     bool BuildApplyLayout(int listIndex, LayoutData& out) const;
     bool SelectedMonitorRect(RECT& out) const;
-    FancyZonesDataTypes::CustomLayoutData* EnsureWorkingCopy(const GUID& uuid);
+    LiteZonesTypes::CustomLayoutData* EnsureWorkingCopy(const GUID& uuid);
     void PersistAllWorkingCopies();
     void PushUndoSnapshot();
     void SelectActiveLayout();
@@ -107,7 +107,7 @@ private:
     std::vector<ListEntry> m_entries;
     std::vector<std::wstring> m_deviceKeys;
     std::vector<RECT> m_deviceRects;
-    std::map<GUID, FancyZonesDataTypes::CustomLayoutData, Util::GuidLess> m_workingCopies;
+    std::map<GUID, LiteZonesTypes::CustomLayoutData, Util::GuidLess> m_workingCopies;
     std::function<void()> m_onChanged;
     bool m_dirty = false;
     HMENU m_menuFile = nullptr;
@@ -119,7 +119,7 @@ private:
     {
         GUID uuid = GUID_NULL;
         std::wstring name;
-        FancyZonesDataTypes::CustomLayoutData data;
+        LiteZonesTypes::CustomLayoutData data;
     };
     std::vector<UndoEntry> m_undoStack;
 };

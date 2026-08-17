@@ -93,6 +93,7 @@
     <ClCompile Include="StoreTests.cpp" />
     <ClCompile Include="JsonTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
+    <ClCompile Include="ColorsTests.cpp" />
     <ClCompile Include="..\..\src\litezones\AppZoneHistory.cpp" />
     <ClCompile Include="..\..\src\litezones\AppliedLayouts.cpp" />
     <ClCompile Include="..\..\src\litezones\CustomLayouts.cpp" />
@@ -102,8 +103,9 @@
     <ClCompile Include="..\..\src\litezones\MonitorManager.cpp" />
     <ClCompile Include="..\..\src\litezones\Paths.cpp" />
     <ClCompile Include="..\..\src\litezones\Settings.cpp" />
+    <ClCompile Include="..\..\src\litezones\Colors.cpp" />
     <ClCompile Include="..\..\src\litezones\GuidUtils.cpp" />
-    <ClCompile Include="..\..\src\litezones\ZoneNavigation.cpp" />
+    <ClCompile Include="ZoneNavigation.cpp" />
     <ClCompile Include="..\..\src\litezones\WindowProperties.cpp" />
     <ClCompile Include="..\..\src\litezones\Zone.cpp" />
   </ItemGroup>
@@ -121,7 +123,7 @@
     <ClInclude Include="..\..\src\litezones\Paths.h" />
     <ClInclude Include="..\..\src\litezones\Settings.h" />
     <ClInclude Include="..\..\src\litezones\GuidUtils.h" />
-    <ClInclude Include="..\..\src\litezones\ZoneNavigation.h" />
+    <ClInclude Include="ZoneNavigation.h" />
     <ClInclude Include="..\..\src\litezones\WindowProperties.h" />
     <ClInclude Include="..\..\src\litezones\Zone.h" />
   </ItemGroup>

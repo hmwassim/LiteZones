@@ -81,54 +81,46 @@ namespace Util
         return buffer;
     }
 
-    std::wstring TypeToString(FancyZonesDataTypes::ZoneSetLayoutType type) noexcept
+    std::wstring TypeToString(LiteZonesTypes::ZoneSetLayoutType type) noexcept
     {
         switch (type)
         {
-        case FancyZonesDataTypes::ZoneSetLayoutType::Blank:
-            return L"blank";
-        case FancyZonesDataTypes::ZoneSetLayoutType::Focus:
-            return L"focus";
-        case FancyZonesDataTypes::ZoneSetLayoutType::Rows:
+        case LiteZonesTypes::ZoneSetLayoutType::Rows:
             return L"rows";
-        case FancyZonesDataTypes::ZoneSetLayoutType::Columns:
+        case LiteZonesTypes::ZoneSetLayoutType::Columns:
             return L"columns";
-        case FancyZonesDataTypes::ZoneSetLayoutType::Grid:
+        case LiteZonesTypes::ZoneSetLayoutType::Grid:
             return L"grid";
-        case FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid:
+        case LiteZonesTypes::ZoneSetLayoutType::PriorityGrid:
             return L"priority-grid";
-        case FancyZonesDataTypes::ZoneSetLayoutType::Custom:
+        case LiteZonesTypes::ZoneSetLayoutType::Custom:
             return L"custom";
         }
-        return L"blank";
+        return L"rows";
     }
 
-    FancyZonesDataTypes::ZoneSetLayoutType TypeFromString(const std::wstring& value) noexcept
+    LiteZonesTypes::ZoneSetLayoutType TypeFromString(const std::wstring& value) noexcept
     {
-        if (value == L"focus")
-        {
-            return FancyZonesDataTypes::ZoneSetLayoutType::Focus;
-        }
         if (value == L"rows")
         {
-            return FancyZonesDataTypes::ZoneSetLayoutType::Rows;
+            return LiteZonesTypes::ZoneSetLayoutType::Rows;
         }
         if (value == L"columns")
         {
-            return FancyZonesDataTypes::ZoneSetLayoutType::Columns;
+            return LiteZonesTypes::ZoneSetLayoutType::Columns;
         }
         if (value == L"grid")
         {
-            return FancyZonesDataTypes::ZoneSetLayoutType::Grid;
+            return LiteZonesTypes::ZoneSetLayoutType::Grid;
         }
         if (value == L"priority-grid")
         {
-            return FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
+            return LiteZonesTypes::ZoneSetLayoutType::PriorityGrid;
         }
         if (value == L"custom")
         {
-            return FancyZonesDataTypes::ZoneSetLayoutType::Custom;
+            return LiteZonesTypes::ZoneSetLayoutType::Custom;
         }
-        return FancyZonesDataTypes::ZoneSetLayoutType::Blank;
+        return LiteZonesTypes::ZoneSetLayoutType::Rows;
     }
 }

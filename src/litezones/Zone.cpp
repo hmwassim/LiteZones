@@ -34,9 +34,9 @@ bool Zone::isValid() const noexcept
 {
     const int width = m_rect.right - m_rect.left;
     const int height = m_rect.bottom - m_rect.top;
-    return m_rect.left >= ZoneConstants::MAX_NEGATIVE_SPACING &&
-           m_rect.right >= ZoneConstants::MAX_NEGATIVE_SPACING &&
-           m_rect.top >= ZoneConstants::MAX_NEGATIVE_SPACING &&
-           m_rect.bottom >= ZoneConstants::MAX_NEGATIVE_SPACING &&
+    return m_rect.left >= ZoneConstants::MIN_ZONE_EDGE &&
+           m_rect.right >= ZoneConstants::MIN_ZONE_EDGE &&
+           m_rect.top >= ZoneConstants::MIN_ZONE_EDGE &&
+           m_rect.bottom >= ZoneConstants::MIN_ZONE_EDGE &&
            width >= 0 && height >= 0;
 }

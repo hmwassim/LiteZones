@@ -1,11 +1,8 @@
 #include "Hooks.h"
 
-#include "Settings.h"
-
-Hooks::Hooks(HWND targetWindow, const SettingsData& settings) :
+Hooks::Hooks(HWND targetWindow) :
     m_targetWindow(targetWindow)
 {
-    s_settings = &settings;
 }
 
 Hooks::~Hooks()
@@ -27,16 +24,12 @@ bool Hooks::Start()
     m_moveStartHook = SetWinEventHook(EVENT_SYSTEM_MOVESIZESTART, EVENT_SYSTEM_MOVESIZESTART, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
     m_moveEndHook = SetWinEventHook(EVENT_SYSTEM_MOVESIZEEND, EVENT_SYSTEM_MOVESIZEEND, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
     m_destroyHook = SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_DESTROY, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
-    m_showHook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_SHOW, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
-    m_createHook = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_CREATE, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
     return m_keyboardHook != nullptr
         && m_mouseHook != nullptr
         && m_moveStartHook != nullptr
         && m_moveEndHook != nullptr
-        && m_destroyHook != nullptr
-        && m_showHook != nullptr
-        && m_createHook != nullptr;
+        && m_destroyHook != nullptr;
 }
 
 void Hooks::Stop()
@@ -57,16 +50,6 @@ void Hooks::Stop()
     {
         UnhookWinEvent(m_destroyHook);
         m_destroyHook = nullptr;
-    }
-    if (m_showHook)
-    {
-        UnhookWinEvent(m_showHook);
-        m_showHook = nullptr;
-    }
-    if (m_createHook)
-    {
-        UnhookWinEvent(m_createHook);
-        m_createHook = nullptr;
     }
     if (m_keyboardHook)
     {
@@ -168,17 +151,9 @@ void CALLBACK Hooks::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LO
             PostMessageW(s_targetWindow, WM_PRIV_WINDOWDESTROYED, reinterpret_cast<WPARAM>(hwnd), 0);
         }
         break;
-    case EVENT_OBJECT_SHOW:
-    case EVENT_OBJECT_CREATE:
-        if (idObject == OBJID_WINDOW && s_settings->snapToAppZoneOnOpen)
-        {
-            PostMessageW(s_targetWindow, WM_PRIV_WINDOWCREATED, reinterpret_cast<WPARAM>(hwnd), 0);
-        }
-        break;
     default:
         break;
     }
 }
 
 HWND Hooks::s_targetWindow = nullptr;
-const SettingsData* Hooks::s_settings = nullptr;

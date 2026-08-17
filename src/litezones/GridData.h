@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-// Grid editor model, ported from FancyZones' GridData.cs. Operates on a
+// Grid editor model. Operates on a
 // GridLayoutInfo in "Multiplier" space (percents 0..10000): zones and resizers
 // are derived from the model, mutated on split/merge/drag, and written back as
 // new rows/columns percents + cell map. The model's name, spacing and
@@ -50,7 +50,7 @@ namespace GridData
     class Grid
     {
     public:
-        explicit Grid(FancyZonesDataTypes::GridLayoutInfo& model);
+        explicit Grid(LiteZonesTypes::GridLayoutInfo& model);
 
         const std::vector<Zone>& Zones() const { return m_zones; }
         const std::vector<Resizer>& Resizers() const { return m_resizers; }
@@ -65,8 +65,8 @@ namespace GridData
         int ResizerPosition(int resizerIndex) const;
 
         // Direct access to the underlying model (for snapshot/restore).
-        FancyZonesDataTypes::GridLayoutInfo& Model() { return *m_model; }
-        const FancyZonesDataTypes::GridLayoutInfo& Model() const { return *m_model; }
+        LiteZonesTypes::GridLayoutInfo& Model() { return *m_model; }
+        const LiteZonesTypes::GridLayoutInfo& Model() const { return *m_model; }
 
         // Rebuild zones/resizers from the model after an external restore.
         void Reset() { FromModel(); }
@@ -95,7 +95,7 @@ namespace GridData
         // through another zone; returns the closure's zone indices and rectangle.
         std::pair<std::vector<int>, Zone> ComputeClosure(const std::vector<int>& indices) const;
 
-        FancyZonesDataTypes::GridLayoutInfo* m_model = nullptr;
+        LiteZonesTypes::GridLayoutInfo* m_model = nullptr;
         std::vector<Zone> m_zones;
         std::vector<Resizer> m_resizers;
         int m_minZoneWidth = 1;

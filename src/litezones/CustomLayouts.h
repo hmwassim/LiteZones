@@ -15,7 +15,7 @@
 class CustomLayouts
 {
 public:
-    using CustomLayoutMap = std::map<GUID, FancyZonesDataTypes::CustomLayoutData, Util::GuidLess>;
+    using CustomLayoutMap = std::map<GUID, LiteZonesTypes::CustomLayoutData, Util::GuidLess>;
 
     static CustomLayouts& instance();
 
@@ -28,10 +28,10 @@ public:
     // LayoutData for applying a custom layout (re-derives zoneCount/spacing/etc.
     // from the stored data). Returns std::nullopt when the uuid is unknown.
     std::optional<LayoutData> GetLayout(const GUID& uuid) const;
-    const FancyZonesDataTypes::CustomLayoutData* GetCustomLayoutData(const GUID& uuid) const;
+    const LiteZonesTypes::CustomLayoutData* GetCustomLayoutData(const GUID& uuid) const;
 
     // Inserts or replaces the layout and persists. Returns false on empty name.
-    bool AddLayout(const GUID& uuid, const FancyZonesDataTypes::CustomLayoutData& data);
+    bool AddLayout(const GUID& uuid, const LiteZonesTypes::CustomLayoutData& data);
     // Removes the layout (also from the rendering registry) and persists.
     void DeleteLayout(const GUID& uuid);
 

@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-using namespace FancyZonesDataTypes;
+using namespace LiteZonesTypes;
 
 namespace
 {
@@ -77,7 +77,7 @@ namespace
 
 #define CHECK_ZONE(expected, actual) compareZones((expected), (actual), __FILE__, __LINE__)
 
-    void checkZones(const Layout* layout, ZoneSetLayoutType type, size_t expectedCount, RECT rect, const char* file, int line)
+    void checkZones(const Layout* layout, size_t expectedCount, RECT rect, const char* file, int line)
     {
         const auto& zones = layout->Zones();
         Report(zones.size() == expectedCount, file, line, "zone count matches");
@@ -91,16 +91,13 @@ namespace
             Report(zoneRect.top >= 0, file, line, "top border is >= 0");
             Report(zoneRect.left < zoneRect.right, file, line, "rect.left < rect.right");
             Report(zoneRect.top < zoneRect.bottom, file, line, "rect.top < rect.bottom");
-            if (type != ZoneSetLayoutType::Focus)
-            {
-                Report(zoneRect.right <= rect.right, file, line, "right border <= monitor work space");
-                Report(zoneRect.bottom <= rect.bottom, file, line, "bottom border <= monitor work space");
-            }
+            Report(zoneRect.right <= rect.right, file, line, "right border <= monitor work space");
+            Report(zoneRect.bottom <= rect.bottom, file, line, "bottom border <= monitor work space");
             ++zoneId;
         }
     }
 
-#define CHECK_ZONES(layout, type, count, rect) checkZones((layout), (type), (count), (rect), __FILE__, __LINE__)
+#define CHECK_ZONES(layout, count, rect) checkZones((layout), (count), (rect), __FILE__, __LINE__)
 
     bool IsPrimaryDpi96()
     {

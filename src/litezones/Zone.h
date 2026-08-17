@@ -7,7 +7,7 @@
 
 namespace ZoneConstants
 {
-    constexpr int MAX_NEGATIVE_SPACING = -20;
+    constexpr int MIN_ZONE_EDGE = 0;
 }
 
 using ZoneIndex = int64_t;

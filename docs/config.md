@@ -1,6 +1,6 @@
 # LiteZones — Config & Data Formats
 
-All files live under `%LOCALAPPDATA%\LiteZones\` (FancyZones uses `%LOCALAPPDATA%\Microsoft\PowerToys\FancyZones`; LiteZones uses its own folder).
+All files live under `%LOCALAPPDATA%\LiteZones\`.
 
 ## Files
 
@@ -11,17 +11,7 @@ All files live under `%LOCALAPPDATA%\LiteZones\` (FancyZones uses `%LOCALAPPDATA
 | `applied-layouts.json` | Which layout applies to each monitor | LiteZones / editor |
 | `app-zone-history.json` | Last zone per app (for re-snap on reopen) | LiteZones |
 
-FancyZones also has `layout-hotkeys.json`, `layout-templates.json`, `default-layouts.json`, `zones-settings.json` (legacy). LiteZones folds template + default-layout selection into `settings.json` / `applied-layouts.json` to reduce file count.
-
-## Type tags
-
-Layout `type` values: `blank`, `focus`, `rows`, `columns`, `grid`, `priority-grid`, `custom`.
-
-Template model IDs (from FancyZones): `c_focusModelId=0xFFFF`, `c_rowsModelId=0xFFFE`, `c_columnsModelId=0xFFFD`, `c_gridModelId=0xFFFC`, `c_priorityGridModelId=0xFFFB`, `c_blankCustomModelId=0xFFFA`.
-
 ## settings.json
-
-Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
 
 ```json
 {
@@ -29,34 +19,35 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
   "mouseSwitch": false,
   "mouseMiddleClickSpanningMultipleZones": false,
   "moveWindowAcrossMonitors": false,
-  "moveWindowsBasedOnPosition": false,
-  "snapToAppZoneOnOpen": false,
-  "overrideSnapHotkeys": true,
   "restoreSize": true,
-  "openWindowOnActiveMonitor": false,
   "spanZonesAcrossMonitors": false,
   "makeDraggedWindowTransparent": false,
   "showZoneNumber": true,
+  "highlightOpacity": 50,
   "zoneColor": "#AACDFF",
   "zoneBorderColor": "#FFFFFF",
-  "zoneHighlightColor": "#AACDFF",
+  "zoneHighlightColor": "#FFFFFF",
   "zoneNumberColor": "#000000",
-  "highlightOpacity": 50,
-  "overlappingZonesAlgorithm": "closestCenter",
   "excludedApps": []
 }
 ```
 
-`overlappingZonesAlgorithm`: `smallest`, `largest`, `positional`, `closestCenter`, `enumElements`.
-
-`snapToAppZoneOnOpen` (default `false`): when a process with history opens a new window, it is snapped into its last-used zone. `overrideSnapHotkeys` (default `true`): also respond to `Win+Arrow` (without Ctrl+Alt); when `false`, `Win+Arrow` passes through to the OS window-snap behavior.
-
-### Keyboard snap hotkeys (v1, fixed)
-
-- `Win+Ctrl+Alt+[0-9]` — move focused window into the zone with that number (0 = zone 0, 9 = zone 9).
-- `Win+Ctrl+Alt+Left/Right/Up/Down` — move the window one zone in that direction; at an edge it cycles within the monitor, or jumps to the adjacent monitor's first/last zone when `moveWindowAcrossMonitors` is on.
-- `Win+Left/Right/Up/Down` — same, only when `overrideSnapHotkeys` is `true`.
-- `Up`/`Down` zone movement (by direction/position) requires `moveWindowsBasedOnPosition`; with it off, arrows move by zone index (`Left`/`Right` only).
+| Key | Default | Description |
+|---|---|---|
+| `shiftDrag` | `true` | Hold Shift while dragging to activate zone snapping |
+| `mouseSwitch` | `false` | Right-click activates zone snapping (XOR with Shift) |
+| `mouseMiddleClickSpanningMultipleZones` | `false` | Middle-click enables multi-zone spanning |
+| `moveWindowAcrossMonitors` | `false` | Allow dragging windows across monitors |
+| `restoreSize` | `true` | Restore window size when unsnapping |
+| `spanZonesAcrossMonitors` | `false` | Combine all monitors into a single work area |
+| `makeDraggedWindowTransparent` | `false` | 50% alpha on dragged windows |
+| `showZoneNumber` | `true` | Display zone numbers in the overlay |
+| `highlightOpacity` | `50` | Zone highlight opacity (0-100) |
+| `zoneColor` | `"#AACDFF"` | Zone fill color |
+| `zoneBorderColor` | `"#FFFFFF"` | Zone border color |
+| `zoneHighlightColor` | `"#FFFFFF"` | Highlighted zone color |
+| `zoneNumberColor` | `"#000000"` | Zone number text color |
+| `excludedApps` | `[]` | Process paths to exclude from snapping |
 
 ## custom-layouts.json
 
@@ -96,7 +87,7 @@ Kebab/snake-case IDs mirror FancyZones (`Settings.cpp` JSON keys):
 }
 ```
 
-Notes: `X`/`Y` are uppercase (matches FancyZones). Percentages can be integers or floats (FancyZones uses 1/10000 multipliers internally; accept either). `cell-child-map` has `rows` arrays of `columns` child-zone indices; `zone-count` is the max child index + 1. The built-in editor (M5) writes this file via the working-copy mechanism: edits are held in memory and persisted on Apply / Apply-to-all / editor close.
+`X`/`Y` are uppercase. Percentages use 1/10000 multipliers internally. `cell-child-map` has `rows` arrays of `columns` child-zone indices; `zone-count` is the max child index + 1. The built-in editor writes this file via the working-copy mechanism: edits are held in memory and persisted on Apply / Apply-to-all / editor close.
 
 ## applied-layouts.json
 
@@ -126,11 +117,11 @@ Assigns a layout to each monitor work area. Template layouts are referenced by t
 }
 ```
 
-LiteZones v1 keeps `virtual-desktop` fixed to the empty GUID (no per-desktop layouts). The stable per-monitor lookup key is the `EnumDisplayDevices` **interface string** (`EDD_GET_DEVICE_INTERFACE_NAME`), which already encodes the monitor instance, so the serialized `device.monitor` holds that string and `monitor-instance` is empty; `monitor-number`/`serial-number` are placeholders. Template layouts are referenced by type (e.g. `priority-grid`); custom layouts by their `custom-layouts.json` UUID.
+The stable per-monitor lookup key is the `EnumDisplayDevices` interface string. Template layouts are referenced by type (e.g. `priority-grid`); custom layouts by their `custom-layouts.json` UUID.
 
 ## app-zone-history.json
 
-v1 keys history by app process path only (layouts are uniform across monitors, so a single zone index set per app suffices; no per-monitor/per-virtual-desktop history).
+Keys history by app process path only.
 
 ```json
 {
@@ -143,22 +134,22 @@ v1 keys history by app process path only (layouts are uniform across monitors, s
 }
 ```
 
-`zone-index-set` is an array of zone indices the window was last snapped to (single-int form is not emitted by v1). Written on every snap; consumed when a new window for the app appears and `snapToAppZoneOnOpen` is enabled.
+`zone-index-set` is an array of zone indices the window was last snapped to. Written on every snap.
 
 ## File watching
 
-`settings.json` and `custom-layouts.json` are hot-reloaded. LiteZones uses `ReadDirectoryChangesW` on the `%LOCALAPPDATA%\LiteZones` directory (single watcher thread, one-shot restartable), posting a message to the main thread. This replaces the `FileWatcher`/`EventWaiter` machinery in `src/common/SettingsAPI`. The editor also triggers an in-process reload via `App::ReloadConfig` after Apply / Apply-to-all / close so work areas rebuild immediately.
+`settings.json` and `custom-layouts.json` are hot-reloaded via `ReadDirectoryChangesW` on the config directory. The editor also triggers an in-process reload via `App::ReloadConfig` after Apply / Apply-to-all / close.
 
 ## Tray menu
 
 - **Zone snapping** — toggles zone snapping globally.
-- **Cycle layout on monitor** — rotates the active monitor through the applied layout's templates/custom layouts (quick experimentation).
-- **Edit layouts...** — opens the in-process layout editor (M5): library list (templates + custom), monitor combo, New / Duplicate / Delete / Rename, zone preview (grid separator-drag + double-click split + select/merge, canvas draw/move/resize/delete), and per-monitor **Apply** / **Apply to all**.
+- **Cycle layout on monitor** — rotates the active monitor through applied layouts.
+- **Edit layouts...** — opens the in-process layout editor (library list, monitor combo, New/Duplicate/Delete/Rename, zone preview, per-monitor Apply / Apply to all).
 - **Reload config** — re-reads all JSON files.
 - **Open config folder** — opens `%LOCALAPPDATA%\LiteZones`.
-- **Start with Windows** — adds/removes `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `LiteZones`.
+- **Start with Windows** — adds/removes `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value.
 - **Exit** — quits.
 
 ## Autostart
 
-`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `LiteZones` = `"C:\path\to\LiteZones.exe"` (no args; `--no-autostart` skips tray). Uninstall = delete the exe folder + remove the Run key.
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `LiteZones` = `"C:\path\to\LiteZones.exe"`. Uninstall = delete the exe folder + remove the Run key.

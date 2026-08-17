@@ -35,7 +35,7 @@ namespace LayoutResolver
         }
 
         LayoutData layout = *applied;
-        if (layout.type == FancyZonesDataTypes::ZoneSetLayoutType::Custom)
+        if (layout.type == LiteZonesTypes::ZoneSetLayoutType::Custom)
         {
             const auto custom = CustomLayouts::instance().GetLayout(layout.uuid);
             if (custom.has_value())

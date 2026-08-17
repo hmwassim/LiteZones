@@ -11,7 +11,6 @@ namespace
     const std::wstring kKeyMouseSwitch = L"mouseSwitch";
     const std::wstring kKeyMouseMiddleClickSpanningMultipleZones = L"mouseMiddleClickSpanningMultipleZones";
     const std::wstring kKeyMoveWindowAcrossMonitors = L"moveWindowAcrossMonitors";
-    const std::wstring kKeySnapToAppZoneOnOpen = L"snapToAppZoneOnOpen";
     const std::wstring kKeyRestoreSize = L"restoreSize";
     const std::wstring kKeySpanZonesAcrossMonitors = L"spanZonesAcrossMonitors";
     const std::wstring kKeyMakeDraggedWindowTransparent = L"makeDraggedWindowTransparent";
@@ -21,7 +20,6 @@ namespace
     const std::wstring kKeyZoneBorderColor = L"zoneBorderColor";
     const std::wstring kKeyZoneHighlightColor = L"zoneHighlightColor";
     const std::wstring kKeyZoneNumberColor = L"zoneNumberColor";
-    const std::wstring kKeyOverlappingZonesAlgorithm = L"overlappingZonesAlgorithm";
     const std::wstring kKeyExcludedApps = L"excludedApps";
 
     constexpr int kMinOpacity = 0;
@@ -70,7 +68,6 @@ void Settings::Load()
         fresh.mouseSwitch = root.At(kKeyMouseSwitch).AsBool(fresh.mouseSwitch);
         fresh.mouseMiddleClickSpanningMultipleZones = root.At(kKeyMouseMiddleClickSpanningMultipleZones).AsBool(fresh.mouseMiddleClickSpanningMultipleZones);
         fresh.moveWindowAcrossMonitors = root.At(kKeyMoveWindowAcrossMonitors).AsBool(fresh.moveWindowAcrossMonitors);
-        fresh.snapToAppZoneOnOpen = root.At(kKeySnapToAppZoneOnOpen).AsBool(fresh.snapToAppZoneOnOpen);
         fresh.restoreSize = root.At(kKeyRestoreSize).AsBool(fresh.restoreSize);
         fresh.spanZonesAcrossMonitors = root.At(kKeySpanZonesAcrossMonitors).AsBool(fresh.spanZonesAcrossMonitors);
         fresh.makeDraggedWindowTransparent = root.At(kKeyMakeDraggedWindowTransparent).AsBool(fresh.makeDraggedWindowTransparent);
@@ -81,7 +78,6 @@ void Settings::Load()
         fresh.zoneBorderColor = root.At(kKeyZoneBorderColor).AsString(fresh.zoneBorderColor);
         fresh.zoneHighlightColor = root.At(kKeyZoneHighlightColor).AsString(fresh.zoneHighlightColor);
         fresh.zoneNumberColor = root.At(kKeyZoneNumberColor).AsString(fresh.zoneNumberColor);
-        fresh.overlappingZonesAlgorithm = root.At(kKeyOverlappingZonesAlgorithm).AsString(fresh.overlappingZonesAlgorithm);
 
         const Json& excluded = root.At(kKeyExcludedApps);
         if (excluded.type() == Json::Type::Array)
@@ -113,7 +109,6 @@ void Settings::Save() const
     root.Set(kKeyMouseSwitch, data.mouseSwitch);
     root.Set(kKeyMouseMiddleClickSpanningMultipleZones, data.mouseMiddleClickSpanningMultipleZones);
     root.Set(kKeyMoveWindowAcrossMonitors, data.moveWindowAcrossMonitors);
-    root.Set(kKeySnapToAppZoneOnOpen, data.snapToAppZoneOnOpen);
     root.Set(kKeyRestoreSize, data.restoreSize);
     root.Set(kKeySpanZonesAcrossMonitors, data.spanZonesAcrossMonitors);
     root.Set(kKeyMakeDraggedWindowTransparent, data.makeDraggedWindowTransparent);
@@ -123,7 +118,6 @@ void Settings::Save() const
     root.Set(kKeyZoneBorderColor, data.zoneBorderColor);
     root.Set(kKeyZoneHighlightColor, data.zoneHighlightColor);
     root.Set(kKeyZoneNumberColor, data.zoneNumberColor);
-    root.Set(kKeyOverlappingZonesAlgorithm, data.overlappingZonesAlgorithm);
 
     Json apps = Json::MakeArray();
     for (const auto& app : data.excludedApps)

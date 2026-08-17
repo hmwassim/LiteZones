@@ -26,7 +26,7 @@ namespace MonitorUtils
     // Work-area rects (rcWork) of all monitors, in EnumDisplayMonitors order.
     std::vector<MonitorRect> GetAllMonitorWorkRects();
 
-    // Deterministic ordering: left-to-right, top-to-bottom (FancyZones OrderMonitors).
+    // Deterministic ordering: left-to-right, top-to-bottom.
     void OrderMonitors(std::vector<MonitorRect>& monitorInfo);
 
     // Bounding box of all given monitor rects (empty input -> {0,0,0,0}).

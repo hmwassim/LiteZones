@@ -112,7 +112,6 @@ WorkArea::~WorkArea()
 bool WorkArea::Init(const LayoutData& layoutData)
 {
     auto layout = std::make_unique<Layout>(layoutData);
-    layout->SetOverlappingAlgorithm(m_settings.overlappingZonesAlgorithm);
     if (!layout->Init(m_workAreaRect, m_monitor))
     {
         return false;

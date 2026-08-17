@@ -52,7 +52,7 @@ namespace
 
 namespace GridData
 {
-    Grid::Grid(FancyZonesDataTypes::GridLayoutInfo& model) :
+    Grid::Grid(LiteZonesTypes::GridLayoutInfo& model) :
         m_model(&model)
     {
         FromModel();
@@ -265,10 +265,10 @@ namespace GridData
         const int rows = static_cast<int>(yCoords.size()) - 1;
         const int cols = static_cast<int>(xCoords.size()) - 1;
 
-        m_model->m_rows = rows;
-        m_model->m_columns = cols;
-        m_model->m_rowsPercents = AdjacentDifference(yCoords);
-        m_model->m_columnsPercents = AdjacentDifference(xCoords);
+        m_model->setRows(rows);
+        m_model->setColumns(cols);
+        m_model->rowsPercents() = AdjacentDifference(yCoords);
+        m_model->columnsPercents() = AdjacentDifference(xCoords);
 
         std::vector<std::vector<int>> cellMap(static_cast<size_t>(rows), std::vector<int>(static_cast<size_t>(cols), 0));
         for (int index = 0; index < static_cast<int>(m_zones.size()); ++index)
@@ -291,7 +291,7 @@ namespace GridData
                 }
             }
         }
-        m_model->m_cellChildMap = std::move(cellMap);
+        m_model->cellChildMap() = std::move(cellMap);
     }
 
     std::vector<Boundary> Grid::BoundarySegments() const

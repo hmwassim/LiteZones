@@ -30,6 +30,12 @@
     <ClCompile Include="UtilsTests.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ColorsTests.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ZoneNavigation.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\litezones\AppZoneHistory.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -58,9 +64,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\litezones\GuidUtils.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\litezones\ZoneNavigation.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\litezones\WindowProperties.cpp">
@@ -113,8 +116,8 @@
     <ClInclude Include="..\..\src\litezones\GuidUtils.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\litezones\ZoneNavigation.h">
-      <Filter>Source</Filter>
+    <ClInclude Include="ZoneNavigation.h">
+      <Filter>Tests</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\litezones\WindowProperties.h">
       <Filter>Source</Filter>

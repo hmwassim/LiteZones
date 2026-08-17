@@ -38,7 +38,7 @@ namespace EditorCanvas
 
     // Enters canvas-edit mode. The model is owned by the caller; drawing,
     // moving and resizing write straight back into it.
-    void SetCanvasEdit(HWND hwnd, FancyZonesDataTypes::CanvasLayoutInfo* model);
+    void SetCanvasEdit(HWND hwnd, LiteZonesTypes::CanvasLayoutInfo* model);
 
     // Client pixel -> virtual-space point (inverse of the letterbox mapping).
     POINT ClientToVirtual(HWND hwnd, POINT clientPt);

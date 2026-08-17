@@ -68,9 +68,9 @@ void TestCustomLayoutsStore()
     grid.grid.rowsPercents() = { 5000, 5000 };
     grid.grid.columnsPercents() = { 3333, 3333, 3334 };
     grid.grid.cellChildMap() = { { 0, 1, 2 }, { 0, 1, 2 } };
-    grid.grid.m_showSpacing = true;
-    grid.grid.m_spacing = 17;
-    grid.grid.m_sensitivityRadius = 25;
+    grid.grid.setShowSpacing(true);
+    grid.grid.setSpacing(17);
+    grid.grid.setSensitivityRadius(25);
     CHECK(store.AddLayout(gridGuid, grid));
     CHECK(store.GetLayout(gridGuid).has_value());
 

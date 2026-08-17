@@ -5,12 +5,12 @@
 #include <cstddef>
 #include <vector>
 
-// Zone navigation helpers ported from FancyZonesLib/util.cpp.
+// Zone navigation helpers.
 namespace Util
 {
     // Returns the index into zoneRects of the zone reached by moving from the
     // window center in the given arrow direction, or zoneRects.size() when
-    // there is no zone in that direction. Mirrors FancyZonesUtils::ChooseNextZoneByPosition.
+    // there is no zone in that direction.
     size_t ChooseNextZoneByPosition(DWORD vkCode, RECT windowRect, const std::vector<RECT>& zoneRects) noexcept;
 
     // Offsets windowRect by one full work area opposite to vkCode so the next

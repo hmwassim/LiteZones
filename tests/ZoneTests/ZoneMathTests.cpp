@@ -65,13 +65,11 @@ void TestZoneFromPointCustom()
     data.zoneCount = 4;
 
     auto layout = std::make_unique<Layout>(data);
-    layout->SetOverlappingAlgorithm(L"smallest");
     layout->Init(RECT{ 0, 0, 1920, 1080 }, MockMonitor());
 
+    // All 4 zones overlap at (50,50); without overlap disambiguation, all are returned.
     auto zones = layout->ZonesFromPoint(POINT{ 50, 50 });
-    CHECK(zones.size() == 1);
-    Zone expected({ 10, 10, 50, 50 }, 3);
-    CHECK_ZONE(expected, layout->Zones().at(zones[0]));
+    CHECK(zones.size() == 4);
 }
 
 void TestZoneFromPointMultizone()
@@ -95,7 +93,6 @@ void TestZoneFromPointMultizone()
     data.zoneCount = 4;
 
     auto layout = std::make_unique<Layout>(data);
-    layout->SetOverlappingAlgorithm(L"smallest");
     layout->Init(RECT{ 0, 0, 1920, 1080 }, MockMonitor());
 
     auto actual = layout->ZonesFromPoint(POINT{ 50, 100 });

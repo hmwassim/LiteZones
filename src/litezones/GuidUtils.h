@@ -23,6 +23,6 @@ namespace Util
     // Canonical uppercase "8-4-4-4-12" form.
     std::wstring GuidToString(const GUID& guid) noexcept;
 
-    std::wstring TypeToString(FancyZonesDataTypes::ZoneSetLayoutType type) noexcept;
-    FancyZonesDataTypes::ZoneSetLayoutType TypeFromString(const std::wstring& value) noexcept;
+    std::wstring TypeToString(LiteZonesTypes::ZoneSetLayoutType type) noexcept;
+    LiteZonesTypes::ZoneSetLayoutType TypeFromString(const std::wstring& value) noexcept;
 }

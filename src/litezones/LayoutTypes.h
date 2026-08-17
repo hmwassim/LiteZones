@@ -15,12 +15,10 @@ namespace DefaultValues
     constexpr int SensitivityRadius = 20;
 }
 
-namespace FancyZonesDataTypes
+namespace LiteZonesTypes
 {
     enum class ZoneSetLayoutType : int
     {
-        Blank,
-        Focus,
         Columns,
         Rows,
         Grid,
@@ -65,12 +63,20 @@ namespace FancyZonesDataTypes
         const std::vector<int>& columnsPercents() const { return m_columnsPercents; }
         const std::vector<std::vector<int>>& cellChildMap() const { return m_cellChildMap; }
 
+        void setRows(int value) { m_rows = value; }
+        void setColumns(int value) { m_columns = value; }
+
         bool showSpacing() const { return m_showSpacing; }
         int spacing() const { return m_spacing; }
         int sensitivityRadius() const { return m_sensitivityRadius; }
 
+        void setShowSpacing(bool value) { m_showSpacing = value; }
+        void setSpacing(int value) { m_spacing = value; }
+        void setSensitivityRadius(int value) { m_sensitivityRadius = value; }
+
         int zoneCount() const;
 
+    private:
         int m_rows{};
         int m_columns{};
         std::vector<int> m_rowsPercents;
@@ -93,7 +99,7 @@ namespace FancyZonesDataTypes
 struct LayoutData
 {
     GUID uuid = GUID_NULL;
-    FancyZonesDataTypes::ZoneSetLayoutType type = FancyZonesDataTypes::ZoneSetLayoutType::PriorityGrid;
+    LiteZonesTypes::ZoneSetLayoutType type = LiteZonesTypes::ZoneSetLayoutType::PriorityGrid;
     bool showSpacing = DefaultValues::ShowSpacing;
     int spacing = DefaultValues::Spacing;
     int zoneCount = DefaultValues::ZoneCount;
