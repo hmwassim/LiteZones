@@ -15,6 +15,7 @@ namespace
     const std::wstring kKeySpanZonesAcrossMonitors = L"spanZonesAcrossMonitors";
     const std::wstring kKeyMakeDraggedWindowTransparent = L"makeDraggedWindowTransparent";
     const std::wstring kKeyShowZoneNumber = L"showZoneNumber";
+    const std::wstring kKeyShowZoneSize = L"showZoneSize";
     const std::wstring kKeyHighlightOpacity = L"highlightOpacity";
     const std::wstring kKeyZoneColor = L"zoneColor";
     const std::wstring kKeyZoneBorderColor = L"zoneBorderColor";
@@ -72,6 +73,7 @@ void Settings::Load()
         fresh.spanZonesAcrossMonitors = root.At(kKeySpanZonesAcrossMonitors).AsBool(fresh.spanZonesAcrossMonitors);
         fresh.makeDraggedWindowTransparent = root.At(kKeyMakeDraggedWindowTransparent).AsBool(fresh.makeDraggedWindowTransparent);
         fresh.showZoneNumber = root.At(kKeyShowZoneNumber).AsBool(fresh.showZoneNumber);
+        fresh.showZoneSize = root.At(kKeyShowZoneSize).AsBool(fresh.showZoneSize);
         fresh.highlightOpacity = ClampOpacity(static_cast<int>(root.At(kKeyHighlightOpacity).AsNumber(fresh.highlightOpacity)));
 
         fresh.zoneColor = root.At(kKeyZoneColor).AsString(fresh.zoneColor);
@@ -113,6 +115,7 @@ void Settings::Save() const
     root.Set(kKeySpanZonesAcrossMonitors, data.spanZonesAcrossMonitors);
     root.Set(kKeyMakeDraggedWindowTransparent, data.makeDraggedWindowTransparent);
     root.Set(kKeyShowZoneNumber, data.showZoneNumber);
+    root.Set(kKeyShowZoneSize, data.showZoneSize);
     root.Set(kKeyHighlightOpacity, static_cast<double>(data.highlightOpacity));
     root.Set(kKeyZoneColor, data.zoneColor);
     root.Set(kKeyZoneBorderColor, data.zoneBorderColor);

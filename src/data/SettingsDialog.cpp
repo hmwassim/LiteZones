@@ -62,6 +62,7 @@ namespace
             Check(dlg, IDC_CHK_SPAN_MONITORS, ctx->edited.spanZonesAcrossMonitors);
             Check(dlg, IDC_CHK_TRANSPARENT, ctx->edited.makeDraggedWindowTransparent);
             Check(dlg, IDC_CHK_ZONE_NUMBER, ctx->edited.showZoneNumber);
+            Check(dlg, IDC_CHK_ZONE_SIZE, ctx->edited.showZoneSize);
 
             SetDlgItemInt(dlg, IDC_EDIT_OPACITY, ctx->edited.highlightOpacity, FALSE);
             SetEditText(dlg, IDC_EDIT_ZONE_COLOR, ctx->edited.zoneColor);
@@ -112,6 +113,7 @@ namespace
                 ctx->edited.spanZonesAcrossMonitors = IsChecked(dlg, IDC_CHK_SPAN_MONITORS);
                 ctx->edited.makeDraggedWindowTransparent = IsChecked(dlg, IDC_CHK_TRANSPARENT);
                 ctx->edited.showZoneNumber = IsChecked(dlg, IDC_CHK_ZONE_NUMBER);
+                ctx->edited.showZoneSize = IsChecked(dlg, IDC_CHK_ZONE_SIZE);
 
                 int opacity = GetDlgItemInt(dlg, IDC_EDIT_OPACITY, nullptr, FALSE);
                 ctx->edited.highlightOpacity = std::max(0, std::min(100, opacity));

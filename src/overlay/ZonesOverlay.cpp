@@ -115,11 +115,12 @@ bool ZonesOverlay::EnsureResources()
     return true;
 }
 
-void ZonesOverlay::DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& highlightZones, const Colors::ZoneColors& colors, bool showZoneText)
+void ZonesOverlay::DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& highlightZones, const Colors::ZoneColors& colors, bool showZoneText, bool showZoneSize)
 {
     m_rects.clear();
     m_colors = colors;
     m_showZoneText = showZoneText;
+    m_showZoneSize = showZoneSize;
 
     std::vector<bool> isHighlighted(static_cast<size_t>(zones.size() + 1), false);
     for (ZoneIndex index : highlightZones)
@@ -189,6 +190,16 @@ void ZonesOverlay::Render()
         }
     }
 
+    IDWriteTextFormat* sizeFormat = nullptr;
+    if (m_showZoneSize && m_showZoneText && m_writeFactory)
+    {
+        if (SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.f, L"en-US", &sizeFormat)))
+        {
+            sizeFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            sizeFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        }
+    }
+
     m_renderTarget->BeginDraw();
     m_renderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f));
 
@@ -219,7 +230,26 @@ void ZonesOverlay::Render()
             if (textBrush)
             {
                 const std::wstring idStr = std::to_wstring(item.id + 1);
-                m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, item.rect, textBrush);
+                if (sizeFormat)
+                {
+                    D2D1_RECT_F topHalf = item.rect;
+                    topHalf.bottom = (item.rect.top + item.rect.bottom) / 2.f;
+                    m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, topHalf, textBrush);
+
+                    const RECT zonePx = { static_cast<LONG>(item.rect.left * m_dpiScale), static_cast<LONG>(item.rect.top * m_dpiScale),
+                                           static_cast<LONG>(item.rect.right * m_dpiScale), static_cast<LONG>(item.rect.bottom * m_dpiScale) };
+                    const int w = zonePx.right - zonePx.left;
+                    const int h = zonePx.bottom - zonePx.top;
+                    wchar_t sizeBuf[32]{};
+                    swprintf_s(sizeBuf, L"%dx%d", w, h);
+                    D2D1_RECT_F bottomHalf = item.rect;
+                    bottomHalf.top = (item.rect.top + item.rect.bottom) / 2.f;
+                    m_renderTarget->DrawTextW(sizeBuf, static_cast<UINT32>(wcslen(sizeBuf)), sizeFormat, bottomHalf, textBrush);
+                }
+                else
+                {
+                    m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, item.rect, textBrush);
+                }
                 textBrush->Release();
             }
         }
@@ -228,6 +258,10 @@ void ZonesOverlay::Render()
     if (textFormat)
     {
         textFormat->Release();
+    }
+    if (sizeFormat)
+    {
+        sizeFormat->Release();
     }
 
     const HRESULT endHr = m_renderTarget->EndDraw();

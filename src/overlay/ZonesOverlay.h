@@ -21,7 +21,7 @@ public:
     ZonesOverlay& operator=(const ZonesOverlay&) = delete;
 
     // Rebuilds the scene from the given zones and (optionally) highlighted ones.
-    void DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& highlightZones, const Colors::ZoneColors& colors, bool showZoneText);
+    void DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& highlightZones, const Colors::ZoneColors& colors, bool showZoneText, bool showZoneSize);
     void Show();
     void Hide();
     bool PreWarm();
@@ -44,5 +44,6 @@ private:
     std::vector<DrawableRect> m_rects;
     Colors::ZoneColors m_colors{};
     bool m_showZoneText = false;
+    bool m_showZoneSize = false;
     float m_dpiScale = 1.f;
 };

@@ -242,7 +242,7 @@ void WorkArea::ShowZones(const ZoneIndexSet& highlightZones)
     if (m_layout && m_overlay)
     {
         SetWorkAreaWindowAsTopmost(nullptr);
-        m_overlay->DrawActiveZoneSet(m_layout->Zones(), highlightZones, Colors::GetZoneColors(m_settings), m_settings.showZoneNumber);
+        m_overlay->DrawActiveZoneSet(m_layout->Zones(), highlightZones, Colors::GetZoneColors(m_settings), m_settings.showZoneNumber, m_settings.showZoneSize);
         m_overlay->Show();
     }
 }
