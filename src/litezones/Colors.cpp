@@ -21,7 +21,6 @@ namespace
         return -1;
     }
 
-    // Parses a "#RRGGBB" string. Leaves out untouched on malformed input.
     void HexToRgb(const std::wstring& text, COLORREF& out)
     {
         if (text.size() != 7 || text[0] != L'#')
@@ -46,17 +45,15 @@ namespace
 
 namespace Colors
 {
-    ZoneColors GetZoneColors() noexcept
+    ZoneColors GetZoneColors(const SettingsData& settings) noexcept
     {
-        const auto& data = Settings::instance().data;
-
         ZoneColors colors{};
-        colors.highlightOpacity = data.highlightOpacity;
+        colors.highlightOpacity = settings.highlightOpacity;
 
-        HexToRgb(data.zoneColor, colors.primaryColor);
-        HexToRgb(data.zoneBorderColor, colors.borderColor);
-        HexToRgb(data.zoneHighlightColor, colors.highlightColor);
-        HexToRgb(data.zoneNumberColor, colors.numberColor);
+        HexToRgb(settings.zoneColor, colors.primaryColor);
+        HexToRgb(settings.zoneBorderColor, colors.borderColor);
+        HexToRgb(settings.zoneHighlightColor, colors.highlightColor);
+        HexToRgb(settings.zoneNumberColor, colors.numberColor);
 
         return colors;
     }

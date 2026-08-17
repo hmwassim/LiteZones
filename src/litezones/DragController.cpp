@@ -7,8 +7,8 @@
 #include "WorkArea.h"
 #include "WorkAreaManager.h"
 
-DragController::DragController(WorkAreaManager& workAreaManager) :
-    m_workAreaManager(workAreaManager)
+DragController::DragController(WorkAreaManager& workAreaManager, const SettingsData& settings) :
+    m_workAreaManager(workAreaManager), m_settings(settings)
 {
 }
 
@@ -21,9 +21,9 @@ bool DragController::IsDraggingEnabled() const
 {
     // Shift gates snapping unless the secondary mouse button is held instead.
     // The secondary mouse only participates when mouseSwitch is enabled.
-    const bool secondaryHeld = Settings::instance().data.mouseSwitch ? m_secondaryMouse : false;
+    const bool secondaryHeld = m_settings.mouseSwitch ? m_secondaryMouse : false;
     const bool toggled = m_shiftPressed != secondaryHeld;
-    return Settings::instance().data.shiftDrag ? toggled : !toggled;
+    return m_settings.shiftDrag ? toggled : !toggled;
 }
 
 bool DragController::IsSelectManyZonesState() const
@@ -40,7 +40,7 @@ void DragController::MoveSizeStart(HWND window)
     {
         return;
     }
-    if (!WindowProcessing::IsProcessableManually(window))
+    if (!WindowProcessing::IsProcessableManually(window, m_settings))
     {
         return;
     }
@@ -117,7 +117,7 @@ void DragController::MoveSizeEnd()
                 }
             }
         }
-        else if (Settings::instance().data.restoreSize)
+        else if (m_settings.restoreSize)
         {
             if (WindowUtils::IsCursorTypeIndicatingSizeEvent())
             {
@@ -176,7 +176,7 @@ void DragController::OnMouseButtonChanged(UINT button, bool down)
     }
     else if (button == VK_MBUTTON)
     {
-        if (Settings::instance().data.mouseMiddleClickSpanningMultipleZones)
+        if (m_settings.mouseMiddleClickSpanningMultipleZones)
         {
             m_middleMouse = down;
         }
@@ -227,7 +227,7 @@ void DragController::SwitchSnappingMode(bool isSnapping)
 
 WorkArea* DragController::WorkAreaContaining(const POINT& cursor, HWND window) const
 {
-    if (Settings::instance().data.moveWindowAcrossMonitors)
+    if (m_settings.moveWindowAcrossMonitors)
     {
         return m_workAreaManager.WorkAreaContainingPoint(cursor);
     }
@@ -245,7 +245,7 @@ WorkArea* DragController::WorkAreaContaining(const POINT& cursor, HWND window) c
 
 void DragController::SetWindowTransparency()
 {
-    if (!Settings::instance().data.makeDraggedWindowTransparent)
+    if (!m_settings.makeDraggedWindowTransparent)
     {
         return;
     }
@@ -267,7 +267,7 @@ void DragController::SetWindowTransparency()
 
 void DragController::ResetWindowTransparency()
 {
-    if (!Settings::instance().data.makeDraggedWindowTransparent || !m_windowProperties.transparencySet)
+    if (!m_settings.makeDraggedWindowTransparent || !m_windowProperties.transparencySet)
     {
         return;
     }

@@ -2,8 +2,9 @@
 
 #include <windows.h>
 
+struct SettingsData;
+
 namespace WindowProcessing
 {
-    // True if the window can be snapped by the user dragging it (mouse snap).
-    bool IsProcessableManually(HWND window) noexcept;
+    bool IsProcessableManually(HWND window, const SettingsData& settings) noexcept;
 }

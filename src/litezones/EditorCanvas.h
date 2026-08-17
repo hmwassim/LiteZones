@@ -7,11 +7,8 @@
 #include <functional>
 #include <vector>
 
-// Child window that renders zones and supports in-place grid editing. Zones are
-// given in a virtual coordinate space and scaled/letterboxed into the client
-// area. In grid-edit mode the window holds a GridData::Grid (over an
-// editor-owned model) and handles separator dragging, double-click splitting,
-// zone selection and merging via a right-click menu.
+struct SettingsData;
+
 namespace EditorCanvas
 {
     enum class Mode
@@ -28,6 +25,8 @@ namespace EditorCanvas
     };
 
     HWND Create(HWND parent, HINSTANCE hInstance);
+
+    void SetSettings(HWND hwnd, const SettingsData& settings);
 
     // Read-only preview of zones in a virtualWidth x virtualHeight space.
     void SetZones(HWND hwnd, int virtualWidth, int virtualHeight, std::vector<ZoneRect> zones);

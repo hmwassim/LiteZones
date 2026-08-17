@@ -6,8 +6,8 @@
 #include "WorkAreaManager.h"
 #include "util.h"
 
-KeyboardSnap::KeyboardSnap(WorkAreaManager& workAreaManager) :
-    m_workAreaManager(workAreaManager)
+KeyboardSnap::KeyboardSnap(WorkAreaManager& workAreaManager, const SettingsData& settings) :
+    m_workAreaManager(workAreaManager), m_settings(settings)
 {
 }
 
@@ -58,7 +58,7 @@ bool KeyboardSnap::SnapByZoneNumber(HWND window, ZoneIndex zoneIndex)
 
 bool KeyboardSnap::MoveByDirection(HWND window, DWORD vkCode)
 {
-    if (Settings::instance().data.moveWindowsBasedOnPosition)
+    if (m_settings.moveWindowsBasedOnPosition)
     {
         return MoveByDirectionAndPosition(window, vkCode);
     }
@@ -183,7 +183,7 @@ bool KeyboardSnap::MoveByDirectionAndPosition(HWND window, DWORD vkCode)
 
 bool KeyboardSnap::SnapOnAdjacentWorkArea(HWND window, DWORD vkCode, WorkArea* current)
 {
-    if (!Settings::instance().data.moveWindowAcrossMonitors)
+    if (!m_settings.moveWindowAcrossMonitors)
     {
         return false;
     }
@@ -241,7 +241,7 @@ void KeyboardSnap::UnsnapFromOtherWorkAreas(HWND window, WorkArea* keep)
 
 WorkArea* KeyboardSnap::WorkAreaForWindow(HWND window) const
 {
-    if (Settings::instance().data.spanZonesAcrossMonitors)
+    if (m_settings.spanZonesAcrossMonitors)
     {
         std::vector<WorkArea>& workAreas = m_workAreaManager.WorkAreas();
         return workAreas.empty() ? nullptr : &workAreas.front();

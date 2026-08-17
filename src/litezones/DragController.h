@@ -6,14 +6,12 @@
 
 class WorkArea;
 class WorkAreaManager;
+struct SettingsData;
 
-// Drives the drag-to-snap interaction for a single dragged window: decides when
-// snapping is active (Shift / secondary-mouse toggle), tracks the highlighted
-// zones, shows/hides the overlay, and snaps or restores on drop.
 class DragController
 {
 public:
-    explicit DragController(WorkAreaManager& workAreaManager);
+    DragController(WorkAreaManager& workAreaManager, const SettingsData& settings);
     ~DragController();
 
     DragController(const DragController&) = delete;
@@ -50,6 +48,7 @@ private:
     };
 
     WorkAreaManager& m_workAreaManager;
+    const SettingsData& m_settings;
     HWND m_draggingWindow = nullptr;
     WorkArea* m_currentWorkArea = nullptr;
     HighlightedZones m_highlightedZones;

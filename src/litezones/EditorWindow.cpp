@@ -146,9 +146,10 @@ namespace
     }
 }
 
-EditorWindow::EditorWindow(HINSTANCE hInstance, HWND notifyWindow) :
+EditorWindow::EditorWindow(HINSTANCE hInstance, HWND notifyWindow, const SettingsData& settings) :
     m_hInstance(hInstance),
-    m_notifyWindow(notifyWindow)
+    m_notifyWindow(notifyWindow),
+    m_settings(settings)
 {
 }
 
@@ -239,6 +240,7 @@ bool EditorWindow::CreateControls()
     m_staticHint = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
                                    0, 0, 0, 0, m_hwnd, nullptr, m_hInstance, nullptr);
     m_canvas = EditorCanvas::Create(m_hwnd, m_hInstance);
+    EditorCanvas::SetSettings(m_canvas, m_settings);
     if (!m_listBox || !m_monitorCombo || !m_canvas)
     {
         return false;

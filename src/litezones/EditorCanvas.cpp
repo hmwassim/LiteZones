@@ -2,6 +2,7 @@
 
 #include "CanvasMath.h"
 #include "Colors.h"
+#include "Settings.h"
 
 #include <windowsx.h>
 
@@ -61,6 +62,8 @@ namespace
 
         // Callback fired just before a committed edit mutates the model.
         std::function<void()> onBeforeEdit;
+
+        const SettingsData* settings = nullptr;
     };
 
     CanvasView& View()
@@ -329,7 +332,7 @@ namespace
         const int offsetX = static_cast<int>((static_cast<float>(width) - static_cast<float>(view.virtualWidth) * scale) / 2.0f);
         const int offsetY = static_cast<int>((static_cast<float>(height) - static_cast<float>(view.virtualHeight) * scale) / 2.0f);
 
-        const Colors::ZoneColors colors = Colors::GetZoneColors();
+        const Colors::ZoneColors colors = view.settings ? Colors::GetZoneColors(*view.settings) : Colors::ZoneColors{};
         HBRUSH fillBrush = CreateSolidBrush(colors.primaryColor);
         HBRUSH borderBrush = CreateSolidBrush(colors.borderColor);
         HBRUSH highlightBrush = CreateSolidBrush(colors.highlightColor);
@@ -982,6 +985,12 @@ namespace EditorCanvas
 
         return CreateWindowExW(0, kCanvasClassName, L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_TABSTOP,
                                0, 0, 0, 0, parent, nullptr, hInstance, nullptr);
+    }
+
+    void SetSettings(HWND hwnd, const SettingsData& settings)
+    {
+        (void)hwnd;
+        View().settings = &settings;
     }
 
     void SetZones(HWND hwnd, int virtualWidth, int virtualHeight, std::vector<ZoneRect> zones)

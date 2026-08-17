@@ -3,9 +3,10 @@
 #include "Settings.h"
 #include "WindowProcessing.h"
 
-Hooks::Hooks(HWND targetWindow) :
+Hooks::Hooks(HWND targetWindow, const SettingsData& settings) :
     m_targetWindow(targetWindow)
 {
+    s_settings = &settings;
 }
 
 Hooks::~Hooks()
@@ -130,7 +131,7 @@ bool Hooks::IsSnapHotkeyComboHeld()
     {
         return true;
     }
-    return Settings::instance().data.overrideSnapHotkeys && !ctrlPressed && !altPressed && !shiftPressed;
+    return s_settings->overrideSnapHotkeys && !ctrlPressed && !altPressed && !shiftPressed;
 }
 
 LRESULT CALLBACK Hooks::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
@@ -162,12 +163,12 @@ LRESULT CALLBACK Hooks::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lP
             if (IsSnapHotkeyKey(info->vkCode) && IsSnapHotkeyComboHeld())
             {
                 // Up/Down only make sense when navigating by position.
-                if ((info->vkCode == VK_UP || info->vkCode == VK_DOWN) && !Settings::instance().data.moveWindowsBasedOnPosition)
+                if ((info->vkCode == VK_UP || info->vkCode == VK_DOWN) && !s_settings->moveWindowsBasedOnPosition)
                 {
                     return CallNextHookEx(nullptr, nCode, wParam, lParam);
                 }
 
-                if (WindowProcessing::IsProcessableManually(GetForegroundWindow()))
+                if (WindowProcessing::IsProcessableManually(GetForegroundWindow(), *s_settings))
                 {
                     PostMessageW(s_targetWindow, WM_PRIV_SNAP_HOTKEY, info->vkCode, 0);
                     return 1;
@@ -222,7 +223,7 @@ void CALLBACK Hooks::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LO
         break;
     case EVENT_OBJECT_SHOW:
     case EVENT_OBJECT_CREATE:
-        if (idObject == OBJID_WINDOW && Settings::instance().data.snapToAppZoneOnOpen)
+        if (idObject == OBJID_WINDOW && s_settings->snapToAppZoneOnOpen)
         {
             PostMessageW(s_targetWindow, WM_PRIV_WINDOWCREATED, reinterpret_cast<WPARAM>(hwnd), 0);
         }
@@ -234,3 +235,4 @@ void CALLBACK Hooks::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LO
 
 HWND Hooks::s_targetWindow = nullptr;
 bool Hooks::s_snappingEnabled = true;
+const SettingsData* Hooks::s_settings = nullptr;

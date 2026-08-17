@@ -10,13 +10,12 @@
 #include <string>
 #include <vector>
 
-// In-process layout editor: a non-modal window listing built-in templates and
-// custom layouts, with a zone preview and per-monitor apply. Reads and writes
-// the same custom-layouts.json / applied-layouts.json stores the runtime uses.
+struct SettingsData;
+
 class EditorWindow
 {
 public:
-    EditorWindow(HINSTANCE hInstance, HWND notifyWindow);
+    EditorWindow(HINSTANCE hInstance, HWND notifyWindow, const SettingsData& settings);
     ~EditorWindow();
 
     EditorWindow(const EditorWindow&) = delete;
@@ -92,6 +91,7 @@ private:
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_notifyWindow = nullptr;
+    const SettingsData& m_settings;
     HWND m_hwnd = nullptr;
     HWND m_listBox = nullptr;
     HWND m_staticMonitor = nullptr;

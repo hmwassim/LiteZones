@@ -7,12 +7,12 @@
 
 #include <memory>
 
-// One monitor's zone layout container, plus the tool window that draws the
-// zones while a window is being dragged over it.
+struct SettingsData;
+
 class WorkArea
 {
 public:
-    WorkArea(HINSTANCE hInstance, HMONITOR monitor, const RECT& workAreaRect);
+    WorkArea(HINSTANCE hInstance, HMONITOR monitor, const RECT& workAreaRect, const SettingsData& settings);
     ~WorkArea();
 
     WorkArea(WorkArea&&) noexcept;
@@ -50,6 +50,7 @@ private:
     HINSTANCE m_hInstance = nullptr;
     HMONITOR m_monitor = nullptr;
     RECT m_workAreaRect{};
+    const SettingsData& m_settings;
     LayoutData m_layoutData;
     std::unique_ptr<Layout> m_layout;
     HWND m_window = nullptr;

@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+struct SettingsData;
+
 namespace Colors
 {
     struct ZoneColors
@@ -13,6 +15,5 @@ namespace Colors
         int highlightOpacity;
     };
 
-    // Reads the zone colors from the current settings.
-    ZoneColors GetZoneColors() noexcept;
+    ZoneColors GetZoneColors(const SettingsData& settings) noexcept;
 }

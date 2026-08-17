@@ -201,9 +201,8 @@ void TestZoneFromPointCustom()
     data.type = ZoneSetLayoutType::Custom;
     data.zoneCount = 4;
 
-    Settings::instance().data.overlappingZonesAlgorithm = L"smallest";
-
     auto layout = std::make_unique<Layout>(data);
+    layout->SetOverlappingAlgorithm(L"smallest");
     layout->Init(RECT{ 0, 0, 1920, 1080 }, MockMonitor());
 
     auto zones = layout->ZonesFromPoint(POINT{ 50, 50 });
@@ -232,9 +231,8 @@ void TestZoneFromPointMultizone()
     data.type = ZoneSetLayoutType::Custom;
     data.zoneCount = 4;
 
-    Settings::instance().data.overlappingZonesAlgorithm = L"smallest";
-
     auto layout = std::make_unique<Layout>(data);
+    layout->SetOverlappingAlgorithm(L"smallest");
     layout->Init(RECT{ 0, 0, 1920, 1080 }, MockMonitor());
 
     auto actual = layout->ZonesFromPoint(POINT{ 50, 100 });

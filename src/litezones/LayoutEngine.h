@@ -41,6 +41,8 @@ public:
 
     bool Init(const RECT& workAreaRect, HMONITOR monitor) noexcept;
 
+    void SetOverlappingAlgorithm(const std::wstring& algorithm) { m_overlappingAlgorithm = algorithm; }
+
     GUID Id() const noexcept;
     FancyZonesDataTypes::ZoneSetLayoutType Type() const noexcept;
 
@@ -52,6 +54,7 @@ public:
 
 private:
     const LayoutData m_data;
+    std::wstring m_overlappingAlgorithm = L"closestCenter";
     ZonesMap m_zones{};
 };
 

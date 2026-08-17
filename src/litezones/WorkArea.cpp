@@ -46,10 +46,11 @@ namespace
     }
 }
 
-WorkArea::WorkArea(HINSTANCE hInstance, HMONITOR monitor, const RECT& workAreaRect) :
+WorkArea::WorkArea(HINSTANCE hInstance, HMONITOR monitor, const RECT& workAreaRect, const SettingsData& settings) :
     m_hInstance(hInstance),
     m_monitor(monitor),
-    m_workAreaRect(workAreaRect)
+    m_workAreaRect(workAreaRect),
+    m_settings(settings)
 {
 }
 
@@ -57,6 +58,7 @@ WorkArea::WorkArea(WorkArea&& other) noexcept :
     m_hInstance(other.m_hInstance),
     m_monitor(other.m_monitor),
     m_workAreaRect(other.m_workAreaRect),
+    m_settings(other.m_settings),
     m_layoutData(std::move(other.m_layoutData)),
     m_layout(std::move(other.m_layout)),
     m_window(other.m_window),
@@ -111,6 +113,7 @@ WorkArea::~WorkArea()
 bool WorkArea::Init(const LayoutData& layoutData)
 {
     auto layout = std::make_unique<Layout>(layoutData);
+    layout->SetOverlappingAlgorithm(m_settings.overlappingZonesAlgorithm);
     if (!layout->Init(m_workAreaRect, m_monitor))
     {
         return false;
@@ -234,7 +237,7 @@ void WorkArea::ShowZones(const ZoneIndexSet& highlightZones)
     if (m_layout && m_overlay)
     {
         SetWorkAreaWindowAsTopmost(nullptr);
-        m_overlay->DrawActiveZoneSet(m_layout->Zones(), highlightZones, Colors::GetZoneColors(), Settings::instance().data.showZoneNumber);
+        m_overlay->DrawActiveZoneSet(m_layout->Zones(), highlightZones, Colors::GetZoneColors(m_settings), m_settings.showZoneNumber);
         m_overlay->Show();
     }
 }

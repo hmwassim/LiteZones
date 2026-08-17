@@ -617,7 +617,7 @@ ZoneIndexSet Layout::ZonesFromPoint(POINT pt) const noexcept
 
     if (overlap)
     {
-        const OverlappingZonesAlgorithm algorithm = OverlappingZonesAlgorithmFromString(Settings::instance().data.overlappingZonesAlgorithm);
+        const OverlappingZonesAlgorithm algorithm = OverlappingZonesAlgorithmFromString(m_overlappingAlgorithm);
 
         switch (algorithm)
         {

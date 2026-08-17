@@ -2,7 +2,8 @@
 
 #include <windows.h>
 
-// Private window messages posted by Hooks to the app's hidden window.
+struct SettingsData;
+
 constexpr UINT WM_PRIV_MOVESIZESTART = WM_APP + 10;
 constexpr UINT WM_PRIV_MOVESIZEEND = WM_APP + 11;
 constexpr UINT WM_PRIV_LOCATIONCHANGE = WM_APP + 12;
@@ -12,15 +13,10 @@ constexpr UINT WM_PRIV_MOUSEBUTTON = WM_APP + 15;
 constexpr UINT WM_PRIV_SNAP_HOTKEY = WM_APP + 16;
 constexpr UINT WM_PRIV_WINDOWCREATED = WM_APP + 17;
 
-// Installs the global hooks that drive drag-to-snap and keyboard snap:
-//  - WinEvent hooks for MOVESIZESTART / MOVESIZEEND / window destroy / window create,
-//  - a low-level keyboard hook tracking Shift/Ctrl and the snap hotkeys,
-//  - a low-level mouse hook tracking right/middle button toggles.
-// Events are delivered to the target window by posting the messages above.
 class Hooks
 {
 public:
-    explicit Hooks(HWND targetWindow);
+    Hooks(HWND targetWindow, const SettingsData& settings);
     ~Hooks();
 
     Hooks(const Hooks&) = delete;
@@ -46,6 +42,7 @@ private:
 
     static HWND s_targetWindow;
     static bool s_snappingEnabled;
+    static const SettingsData* s_settings;
 
     HWND m_targetWindow = nullptr;
     HHOOK m_keyboardHook = nullptr;

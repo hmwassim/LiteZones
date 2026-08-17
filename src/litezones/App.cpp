@@ -68,7 +68,7 @@ namespace
 
 App::App(HINSTANCE hInstance) :
     m_hInstance(hInstance),
-    m_workAreaManager(hInstance)
+    m_workAreaManager(hInstance, Settings::instance().data)
 {
 }
 
@@ -116,9 +116,9 @@ bool App::Init()
         return false;
     }
 
-    m_dragController = std::make_unique<DragController>(m_workAreaManager);
-    m_keyboardSnap = std::make_unique<KeyboardSnap>(m_workAreaManager);
-    m_hooks = std::make_unique<Hooks>(m_hwnd);
+    m_dragController = std::make_unique<DragController>(m_workAreaManager, Settings::instance().data);
+    m_keyboardSnap = std::make_unique<KeyboardSnap>(m_workAreaManager, Settings::instance().data);
+    m_hooks = std::make_unique<Hooks>(m_hwnd, Settings::instance().data);
     if (!m_hooks->Start())
     {
         return false;
@@ -311,7 +311,7 @@ void App::OpenLayoutEditor()
 {
     if (!m_editor)
     {
-        m_editor = std::make_unique<EditorWindow>(m_hInstance, m_hwnd);
+        m_editor = std::make_unique<EditorWindow>(m_hInstance, m_hwnd, Settings::instance().data);
         m_editor->SetOnChanged([this] { ReloadConfig(); });
     }
     if (!m_editor->IsOpen() && !m_editor->Create())
@@ -452,7 +452,7 @@ void App::HandleWindowCreated(HWND window)
         return;
     }
 
-    if (!WindowProcessing::IsProcessableManually(window))
+    if (!WindowProcessing::IsProcessableManually(window, Settings::instance().data))
     {
         return;
     }

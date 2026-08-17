@@ -19,8 +19,6 @@ namespace
         return text;
     }
 
-    // True if the given case-insensitive needle is a substring of the window's
-    // process path or window class name.
     bool MatchesExclusion(HWND window, const std::wstring& processPath, const std::wstring& excluded)
     {
         if (excluded.empty())
@@ -40,15 +38,14 @@ namespace
         return Lowercase(className).find(lowerNeedle) != std::wstring::npos;
     }
 
-    bool IsExcludedByUser(HWND window, const std::wstring& processPath)
+    bool IsExcludedByUser(HWND window, const std::wstring& processPath, const SettingsData& settings)
     {
-        const auto& excludedApps = Settings::instance().data.excludedApps;
-        if (excludedApps.empty())
+        if (settings.excludedApps.empty())
         {
             return false;
         }
 
-        for (const auto& excluded : excludedApps)
+        for (const auto& excluded : settings.excludedApps)
         {
             if (MatchesExclusion(window, processPath, excluded))
             {
@@ -61,7 +58,6 @@ namespace
 
     bool IsExcludedByDefault(HWND window, const std::wstring& processPath)
     {
-        // Never snap LiteZones' own windows.
         wchar_t selfPath[MAX_PATH]{};
         if (GetModuleFileNameW(nullptr, selfPath, MAX_PATH) > 0)
         {
@@ -71,7 +67,6 @@ namespace
             }
         }
 
-        // Windows shell and Start menu surface.
         wchar_t className[kClassNameBufferSize]{};
         GetClassNameW(window, className, kClassNameBufferSize);
         const std::wstring lowerClass = Lowercase(className);
@@ -90,7 +85,7 @@ namespace
 
 namespace WindowProcessing
 {
-    bool IsProcessableManually(HWND window) noexcept
+    bool IsProcessableManually(HWND window, const SettingsData& settings) noexcept
     {
         if (!IsWindow(window))
         {
@@ -135,7 +130,7 @@ namespace WindowProcessing
         }
 
         const std::wstring processPath = WindowUtils::GetProcessPath(window);
-        if (IsExcludedByUser(window, processPath))
+        if (IsExcludedByUser(window, processPath, settings))
         {
             return false;
         }

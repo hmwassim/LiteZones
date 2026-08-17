@@ -52,8 +52,8 @@ namespace LayoutResolver
     }
 }
 
-WorkAreaManager::WorkAreaManager(HINSTANCE hInstance) :
-    m_hInstance(hInstance)
+WorkAreaManager::WorkAreaManager(HINSTANCE hInstance, const SettingsData& settings) :
+    m_hInstance(hInstance), m_settings(settings)
 {
 }
 
@@ -80,7 +80,7 @@ void WorkAreaManager::Update(bool span, const LayoutData& defaultLayout, bool fo
             }
         }
 
-        WorkArea wa(m_hInstance, monitor, rect);
+        WorkArea wa(m_hInstance, monitor, rect, m_settings);
         wa.Init(layout);
         updated.push_back(std::move(wa));
     }
