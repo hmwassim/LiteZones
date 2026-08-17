@@ -51,6 +51,9 @@ namespace EditorCanvas
     // Used by EditorWindow to snapshot undo state.
     void SetOnBeforeEdit(HWND hwnd, std::function<void()> callback);
 
+    // Callback fired to display a transient hint message.
+    void SetOnHint(HWND hwnd, std::function<void(const wchar_t*)> callback);
+
     // Returns true if the canvas has an active mouse gesture (resizer drag,
     // zone move/resize, or zone draw).
     bool IsDragging(HWND hwnd);

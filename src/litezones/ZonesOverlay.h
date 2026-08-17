@@ -44,4 +44,5 @@ private:
     std::vector<DrawableRect> m_rects;
     Colors::ZoneColors m_colors{};
     bool m_showZoneText = false;
+    float m_dpiScale = 1.f;
 };

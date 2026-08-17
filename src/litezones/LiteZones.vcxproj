@@ -107,6 +107,7 @@
     <ClCompile Include="MonitorManager.cpp" />
     <ClCompile Include="Paths.cpp" />
     <ClCompile Include="Settings.cpp" />
+    <ClCompile Include="SettingsDialog.cpp" />
     <ClCompile Include="TrayService.cpp" />
     <ClCompile Include="GuidUtils.cpp" />
     <ClCompile Include="WindowProcessing.cpp" />
@@ -141,6 +142,7 @@
     <ClInclude Include="Paths.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="SettingsDialog.h" />
     <ClInclude Include="TrayService.h" />
     <ClInclude Include="GuidUtils.h" />
     <ClInclude Include="WindowProcessing.h" />

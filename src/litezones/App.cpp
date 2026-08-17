@@ -10,6 +10,7 @@
 #include "MonitorManager.h"
 #include "Paths.h"
 #include "Settings.h"
+#include "SettingsDialog.h"
 #include "WindowUtils.h"
 #include "resource.h"
 
@@ -91,6 +92,7 @@ bool App::Init()
     m_tray.SetOnEditLayouts([this] { OpenLayoutEditor(); });
     m_tray.SetOnReloadConfig([this] { ReloadConfig(); });
     m_tray.SetOnOpenFolder([this] { OpenConfigFolder(); });
+    m_tray.SetOnSettings([this] { OpenSettings(); });
     m_tray.SetOnExit([this] { Exit(); });
 
     if (!m_tray.AddIcon(m_hwnd, m_hInstance))
@@ -120,9 +122,14 @@ int App::Run()
     {
         if (m_editor && m_editor->IsOpen() && m_editor->GetAccel())
         {
-            if (TranslateAcceleratorW(m_editor->Hwnd(), m_editor->GetAccel(), &msg))
+            const bool isEditFocused = m_editor->IsEditFocused();
+            const bool isDeleteOrF2 = (msg.wParam == VK_DELETE || msg.wParam == VK_F2);
+            if (!isEditFocused || !isDeleteOrF2)
             {
-                continue;
+                if (TranslateAcceleratorW(m_editor->Hwnd(), m_editor->GetAccel(), &msg))
+                {
+                    continue;
+                }
             }
         }
         TranslateMessage(&msg);
@@ -156,6 +163,7 @@ void App::ToggleSnapping()
         m_dragController->MoveSizeEnd();
     }
     m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
+    m_tray.ShowBalloon(m_hwnd, L"LiteZones", m_snappingEnabled ? L"Zone snapping enabled." : L"Zone snapping disabled.");
 }
 
 void App::ReloadConfig()
@@ -219,6 +227,7 @@ void App::OpenLayoutEditor()
     if (!m_editor->IsOpen() && !m_editor->Create())
     {
         m_editor.reset();
+        MessageBoxW(m_hwnd, L"Failed to open the layout editor.", L"LiteZones", MB_OK | MB_ICONERROR);
         return;
     }
     m_editor->Show();
@@ -228,6 +237,14 @@ void App::OpenConfigFolder()
 {
     const std::wstring dir = Paths::ConfigDir();
     ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+void App::OpenSettings()
+{
+    if (SettingsDialog::Show(m_hwnd, m_hInstance))
+    {
+        ReloadConfig();
+    }
 }
 
 void App::Exit()

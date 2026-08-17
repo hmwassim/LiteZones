@@ -28,6 +28,7 @@ public:
     HWND Hwnd() const { return m_hwnd; }
     HACCEL GetAccel() const { return m_hAccel; }
     bool IsOpen() const { return m_hwnd != nullptr; }
+    bool IsEditFocused() const;
 
     // Called after any change that persists to the stores (layout added/deleted,
     // layout applied) so the runtime can rebuild work areas.
@@ -83,6 +84,7 @@ private:
     void OnApply();
     void OnApplyAll();
     void OnUndo();
+    void OnRedo();
     void OnAbout();
 
     int SelectedListIndex() const;
@@ -118,8 +120,8 @@ private:
     bool m_dirty = false;
     HMENU m_menuFile = nullptr;
     HMENU m_menuEdit = nullptr;
-    bool m_initialSelectionDone = false;
     HACCEL m_hAccel = nullptr;
+    UINT m_currentDpi = 96;
 
     struct UndoEntry
     {
@@ -128,4 +130,5 @@ private:
         LiteZonesTypes::CustomLayoutData data;
     };
     std::vector<UndoEntry> m_undoStack;
+    std::vector<UndoEntry> m_redoStack;
 };

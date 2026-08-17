@@ -63,6 +63,9 @@ namespace
         // Callback fired just before a committed edit mutates the model.
         std::function<void()> onBeforeEdit;
 
+        // Callback fired to display a transient hint message.
+        std::function<void(const wchar_t*)> onHint;
+
         const SettingsData* settings = nullptr;
     };
 
@@ -87,6 +90,15 @@ namespace
         if (view.onBeforeEdit)
         {
             view.onBeforeEdit();
+        }
+    }
+
+    void NotifyHint(const wchar_t* message)
+    {
+        CanvasView& view = View();
+        if (view.onHint)
+        {
+            view.onHint(message);
         }
     }
 
@@ -798,6 +810,10 @@ namespace
                         });
                         view.selectedCanvasZone = static_cast<int>(view.canvasModel->zones.size()) - 1;
                     }
+                    else
+                    {
+                        NotifyHint(L"Zone too small, minimum 20x20.");
+                    }
                     view.canvasInteraction = CanvasInteraction::None;
                     if (GetCapture() == hwnd)
                     {
@@ -856,6 +872,20 @@ namespace
             {
                 if (EditorCanvas::CancelActiveOperation(hwnd))
                 {
+                    return 0;
+                }
+            }
+            if (wParam == 'A' && (GetKeyState(VK_CONTROL) & 0x8000))
+            {
+                if (view.mode == EditorCanvas::Mode::GridEdit && view.grid)
+                {
+                    view.selectedZones.clear();
+                    const int count = static_cast<int>(view.grid->Zones().size());
+                    for (int i = 0; i < count; ++i)
+                    {
+                        view.selectedZones.push_back(i);
+                    }
+                    InvalidateRect(hwnd, nullptr, TRUE);
                     return 0;
                 }
             }
@@ -1096,6 +1126,13 @@ namespace EditorCanvas
         (void)hwnd;
         CanvasView& view = View();
         view.onBeforeEdit = std::move(callback);
+    }
+
+    void SetOnHint(HWND hwnd, std::function<void(const wchar_t*)> callback)
+    {
+        (void)hwnd;
+        CanvasView& view = View();
+        view.onHint = std::move(callback);
     }
 
     bool IsDragging(HWND hwnd)

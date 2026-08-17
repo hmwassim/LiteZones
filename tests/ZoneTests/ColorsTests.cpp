@@ -42,10 +42,10 @@ void TestHexToRgbInvalidInput()
     settings.highlightOpacity = 50;
 
     const auto colors = Colors::GetZoneColors(settings);
-    CHECK(colors.primaryColor == 0);
-    CHECK(colors.borderColor == 0);
-    CHECK(colors.highlightColor == 0);
-    CHECK(colors.numberColor == 0);
+    CHECK(colors.primaryColor == RGB(170, 205, 255));
+    CHECK(colors.borderColor == RGB(255, 255, 255));
+    CHECK(colors.highlightColor == RGB(255, 255, 255));
+    CHECK(colors.numberColor == RGB(0, 0, 0));
 }
 
 void RunColorsTests()

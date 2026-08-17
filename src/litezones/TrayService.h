@@ -7,7 +7,7 @@
 class TrayService
 {
 public:
-    TrayService() = default;
+    TrayService() : m_autostart(IsAutostartEnabled()) {}
     ~TrayService();
 
     TrayService(const TrayService&) = delete;
@@ -16,6 +16,7 @@ public:
     bool AddIcon(HWND hwnd, HINSTANCE hInstance);
     void RemoveIcon();
     void UpdateTip(HWND hwnd, bool snappingEnabled);
+    void ShowBalloon(HWND hwnd, const wchar_t* title, const wchar_t* message);
 
     // Builds and shows the tray context menu. Returns the selected action via callbacks.
     void ShowMenu(HWND hwnd, bool snappingEnabled);
@@ -28,6 +29,7 @@ public:
     void SetOnEditLayouts(std::function<void()> cb) { m_onEditLayouts = std::move(cb); }
     void SetOnReloadConfig(std::function<void()> cb) { m_onReloadConfig = std::move(cb); }
     void SetOnOpenFolder(std::function<void()> cb) { m_onOpenFolder = std::move(cb); }
+    void SetOnSettings(std::function<void()> cb) { m_onSettings = std::move(cb); }
     void SetOnExit(std::function<void()> cb) { m_onExit = std::move(cb); }
 
 private:
@@ -38,5 +40,6 @@ private:
     std::function<void()> m_onEditLayouts;
     std::function<void()> m_onReloadConfig;
     std::function<void()> m_onOpenFolder;
+    std::function<void()> m_onSettings;
     std::function<void()> m_onExit;
 };

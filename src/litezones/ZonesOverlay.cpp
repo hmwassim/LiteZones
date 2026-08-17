@@ -1,5 +1,7 @@
 #include "ZonesOverlay.h"
 
+#include "MonitorManager.h"
+
 #include <d2d1helper.h>
 #include <dxgiformat.h>
 
@@ -19,13 +21,14 @@ namespace
 
     constexpr float kDefaultDpi = 96.f;
 
-    D2D1_RECT_F ToRectF(const RECT& rect) noexcept
+    D2D1_RECT_F ToRectF(const RECT& rect, float dpiScale) noexcept
     {
+        const float inv = 1.f / dpiScale;
         D2D1_RECT_F result;
-        result.left = static_cast<float>(rect.left) + 0.5f;
-        result.top = static_cast<float>(rect.top) + 0.5f;
-        result.right = static_cast<float>(rect.right) - 0.5f;
-        result.bottom = static_cast<float>(rect.bottom) - 0.5f;
+        result.left = static_cast<float>(rect.left) * inv + 0.5f;
+        result.top = static_cast<float>(rect.top) * inv + 0.5f;
+        result.right = static_cast<float>(rect.right) * inv - 0.5f;
+        result.bottom = static_cast<float>(rect.bottom) * inv - 0.5f;
         return result;
     }
 }
@@ -81,14 +84,18 @@ bool ZonesOverlay::EnsureResources()
         }
     }
 
-    // Always render at 96 DPI: LiteZones is per-monitor DPI aware, so zone
-    // coordinates are physical pixels and only the text needs DIP scaling.
+    // Use the monitor's actual DPI for the D2D render target so zone
+    // coordinates (physical pixels) and text are scaled correctly.
+    const UINT dpi = MonitorUtils::GetDpiForMonitor(MonitorFromWindow(m_window, MONITOR_DEFAULTTONEAREST));
+    const float dpiF = static_cast<float>(dpi);
+    m_dpiScale = dpiF / kDefaultDpi;
+
     D2D1_RENDER_TARGET_PROPERTIES rtProps{};
     rtProps.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
     rtProps.pixelFormat.format = DXGI_FORMAT_UNKNOWN;
     rtProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-    rtProps.dpiX = kDefaultDpi;
-    rtProps.dpiY = kDefaultDpi;
+    rtProps.dpiX = dpiF;
+    rtProps.dpiY = dpiF;
 
     D2D1_HWND_RENDER_TARGET_PROPERTIES hwndProps{};
     hwndProps.hwnd = m_window;
@@ -135,7 +142,7 @@ void ZonesOverlay::DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& 
             }
 
             DrawableRect item;
-            item.rect = ToRectF(zone.GetZoneRect());
+            item.rect = ToRectF(zone.GetZoneRect(), m_dpiScale);
             item.id = static_cast<int>(id);
             item.highlighted = highlighted;
             m_rects.push_back(item);

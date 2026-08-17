@@ -29,6 +29,7 @@ private:
     void ToggleSnapping();
     void ReloadConfig();
     void OpenConfigFolder();
+    void OpenSettings();
     void ReloadWorkAreas(bool forceRelayout = true);
     void CycleLayoutOnMonitor();
     void OpenLayoutEditor();

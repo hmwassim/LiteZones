@@ -7,6 +7,8 @@
 #include "LayoutEngine.h"
 #include "LayoutHelpers.h"
 #include "MonitorManager.h"
+#include "Settings.h"
+#include "SettingsDialog.h"
 #include "resource.h"
 
 #include <objbase.h>
@@ -27,6 +29,11 @@ namespace
     constexpr int kMaxSpacing = 100;
     constexpr int kMinTrackWidth = 820;
     constexpr int kMinTrackHeight = 480;
+
+    int ScaleForDpi(int value, UINT dpi)
+    {
+        return MulDiv(value, static_cast<int>(dpi), 96);
+    }
 
     struct NewLayoutResult
     {
@@ -80,12 +87,17 @@ namespace
         switch (msg)
         {
         case WM_INITDIALOG:
+        {
             SetWindowLongPtrW(dlg, GWLP_USERDATA, lParam);
             CheckDlgButton(dlg, IDC_NEW_GRID, BST_CHECKED);
             SetDlgItemInt(dlg, IDC_NEW_ROWS, 2, FALSE);
             SetDlgItemInt(dlg, IDC_NEW_COLS, 2, FALSE);
-            SetFocus(GetDlgItem(dlg, IDC_NEW_NAME));
-            return TRUE;
+            HWND nameEdit = GetDlgItem(dlg, IDC_NEW_NAME);
+            SetWindowTextW(nameEdit, L"Custom Layout");
+            SendMessageW(nameEdit, EM_SETSEL, 0, -1);
+            SetFocus(nameEdit);
+            return FALSE;
+        }
 
         case WM_COMMAND:
             switch (LOWORD(wParam))
@@ -184,8 +196,19 @@ bool EditorWindow::Create()
         return false;
     }
 
+    const std::vector<MonitorUtils::MonitorRect> monitors = MonitorUtils::GetAllMonitorWorkRects();
+    UINT dpi = 96;
+    if (!monitors.empty())
+    {
+        dpi = MonitorUtils::GetDpiForMonitor(monitors.front().first);
+    }
+    m_currentDpi = dpi;
+
+    const int initialWidth = ScaleForDpi(kEditorInitialWidth, dpi);
+    const int initialHeight = ScaleForDpi(kEditorInitialHeight, dpi);
+
     m_hwnd = CreateWindowExW(WS_CLIPCHILDREN, kEditorClassName, kWindowTitle, WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT, CW_USEDEFAULT, kEditorInitialWidth, kEditorInitialHeight, nullptr, nullptr, m_hInstance, this);
+                             CW_USEDEFAULT, CW_USEDEFAULT, initialWidth, initialHeight, nullptr, nullptr, m_hInstance, this);
     if (!m_hwnd)
     {
         return false;
@@ -202,6 +225,22 @@ bool EditorWindow::Create()
 
     m_hAccel = LoadAcceleratorsW(m_hInstance, MAKEINTRESOURCEW(IDA_EDITOR));
     return true;
+}
+
+bool EditorWindow::IsEditFocused() const
+{
+    if (!m_hwnd)
+    {
+        return false;
+    }
+    HWND focused = GetFocus();
+    if (!focused)
+    {
+        return false;
+    }
+    wchar_t className[32]{};
+    GetClassNameW(focused, className, static_cast<int>(std::size(className)));
+    return wcscmp(className, L"Edit") == 0;
 }
 
 void EditorWindow::Show()
@@ -253,8 +292,9 @@ bool EditorWindow::CreateControls()
         return false;
     }
 
-    EditorCanvas::SetOnEdited(m_canvas, [this]() { NotifyChanged(); });
+    EditorCanvas::SetOnEdited(m_canvas, [this]() { m_dirty = true; NotifyChanged(); });
     EditorCanvas::SetOnBeforeEdit(m_canvas, [this]() { PushUndoSnapshot(); });
+    EditorCanvas::SetOnHint(m_canvas, [this](const wchar_t* msg) { SetWindowTextW(m_staticHint, msg); });
 
     const auto createButton = [this, font](ControlId id, const wchar_t* text) {
         return CreateWindowExW(0, L"BUTTON", text, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
@@ -295,26 +335,31 @@ void EditorWindow::LayoutControls()
     GetClientRect(m_hwnd, &client);
     const int width = client.right - client.left;
     const int height = client.bottom - client.top;
+    const UINT dpi = m_currentDpi;
 
-    const int listHeight = std::max(120, height - 16 - 64);
-    MoveWindow(m_listBox, 8, 8, kLeftPanelWidth - 16, listHeight, TRUE);
-    MoveWindow(m_staticMonitor, kLeftPanelWidth + 8, 13, 56, 16, TRUE);
-    MoveWindow(m_monitorCombo, kLeftPanelWidth + 66, 10, 170, 200, TRUE);
-    MoveWindow(m_staticSpacing, kLeftPanelWidth + 244, 13, 48, 16, TRUE);
-    MoveWindow(m_spacingEdit, kLeftPanelWidth + 296, 10, 44, 24, TRUE);
-    MoveWindow(m_staticZones, kLeftPanelWidth + 348, 13, 40, 16, TRUE);
-    MoveWindow(m_zoneCountEdit, kLeftPanelWidth + 390, 10, 40, 24, TRUE);
-    MoveWindow(m_btnApply, kLeftPanelWidth + 438, 10, 56, 24, TRUE);
-    MoveWindow(m_btnApplyAll, kLeftPanelWidth + 500, 10, 72, 24, TRUE);
+    const int panelW = ScaleForDpi(kLeftPanelWidth, dpi);
+    const int pad = ScaleForDpi(8, dpi);
+    const int ctrlH = ScaleForDpi(24, dpi);
+    const int labelH = ScaleForDpi(16, dpi);
+    const int listHeight = std::max(ScaleForDpi(120, dpi), height - pad - ScaleForDpi(64, dpi));
+    MoveWindow(m_listBox, pad, pad, panelW - pad * 2, listHeight, TRUE);
+    MoveWindow(m_staticMonitor, panelW + pad, ScaleForDpi(13, dpi), ScaleForDpi(56, dpi), labelH, TRUE);
+    MoveWindow(m_monitorCombo, panelW + ScaleForDpi(66, dpi), ScaleForDpi(10, dpi), ScaleForDpi(170, dpi), ScaleForDpi(200, dpi), TRUE);
+    MoveWindow(m_staticSpacing, panelW + ScaleForDpi(244, dpi), ScaleForDpi(13, dpi), ScaleForDpi(48, dpi), labelH, TRUE);
+    MoveWindow(m_spacingEdit, panelW + ScaleForDpi(296, dpi), ScaleForDpi(10, dpi), ScaleForDpi(44, dpi), ctrlH, TRUE);
+    MoveWindow(m_staticZones, panelW + ScaleForDpi(348, dpi), ScaleForDpi(13, dpi), ScaleForDpi(40, dpi), labelH, TRUE);
+    MoveWindow(m_zoneCountEdit, panelW + ScaleForDpi(390, dpi), ScaleForDpi(10, dpi), ScaleForDpi(40, dpi), ctrlH, TRUE);
+    MoveWindow(m_btnApply, panelW + ScaleForDpi(438, dpi), ScaleForDpi(10, dpi), ScaleForDpi(56, dpi), ctrlH, TRUE);
+    MoveWindow(m_btnApplyAll, panelW + ScaleForDpi(500, dpi), ScaleForDpi(10, dpi), ScaleForDpi(72, dpi), ctrlH, TRUE);
 
-    const int buttonWidth = (kLeftPanelWidth - 16 - 8) / 2;
-    MoveWindow(GetDlgItem(m_hwnd, kBtnNew), 8, height - 60, buttonWidth, 24, TRUE);
-    MoveWindow(GetDlgItem(m_hwnd, kBtnDuplicate), 8 + buttonWidth + 8, height - 60, buttonWidth, 24, TRUE);
-    MoveWindow(GetDlgItem(m_hwnd, kBtnDelete), 8, height - 32, buttonWidth, 24, TRUE);
-    MoveWindow(GetDlgItem(m_hwnd, kBtnRename), 8 + buttonWidth + 8, height - 32, buttonWidth, 24, TRUE);
+    const int buttonWidth = (panelW - pad * 2 - pad) / 2;
+    MoveWindow(GetDlgItem(m_hwnd, kBtnNew), pad, height - ScaleForDpi(60, dpi), buttonWidth, ctrlH, TRUE);
+    MoveWindow(GetDlgItem(m_hwnd, kBtnDuplicate), pad + buttonWidth + pad, height - ScaleForDpi(60, dpi), buttonWidth, ctrlH, TRUE);
+    MoveWindow(GetDlgItem(m_hwnd, kBtnDelete), pad, height - ScaleForDpi(32, dpi), buttonWidth, ctrlH, TRUE);
+    MoveWindow(GetDlgItem(m_hwnd, kBtnRename), pad + buttonWidth + pad, height - ScaleForDpi(32, dpi), buttonWidth, ctrlH, TRUE);
 
-    MoveWindow(m_canvas, kLeftPanelWidth + 8, 40, std::max(60, width - kLeftPanelWidth - 16), std::max(60, height - 40 - 32), TRUE);
-    MoveWindow(m_staticHint, kLeftPanelWidth + 8, height - 24, std::max(60, width - kLeftPanelWidth - 16), 18, TRUE);
+    MoveWindow(m_canvas, panelW + pad, ScaleForDpi(40, dpi), std::max(ScaleForDpi(60, dpi), width - panelW - pad * 2), std::max(ScaleForDpi(60, dpi), height - ScaleForDpi(40, dpi) - ScaleForDpi(32, dpi)), TRUE);
+    MoveWindow(m_staticHint, panelW + pad, height - ScaleForDpi(24, dpi), std::max(ScaleForDpi(60, dpi), width - panelW - pad * 2), ScaleForDpi(18, dpi), TRUE);
 }
 
 void EditorWindow::PopulateLayoutList()
@@ -425,7 +470,7 @@ void EditorWindow::OnSelectionChanged()
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     const bool isCustom = !entry.isTemplate;
-    EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), TRUE);
+    EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), FALSE);
     EnableWindow(GetDlgItem(m_hwnd, kBtnDelete), isCustom);
     EnableWindow(GetDlgItem(m_hwnd, kBtnRename), isCustom);
 
@@ -440,6 +485,11 @@ void EditorWindow::OnSelectionChanged()
             spacingEditable = data->type == LiteZonesTypes::CustomLayoutType::Grid;
         }
         zoneCountEditable = false;
+    }
+    else
+    {
+        spacingEditable = (entry.type != LiteZonesTypes::ZoneSetLayoutType::Rows &&
+                           entry.type != LiteZonesTypes::ZoneSetLayoutType::Columns);
     }
     if (m_spacingEdit)
     {
@@ -550,6 +600,7 @@ void EditorWindow::OnSpacingChanged()
     }
     value = std::max(0, std::min(kMaxSpacing, value));
     m_spacingValue = value;
+    m_dirty = true;
 
     const int index = SelectedListIndex();
     if (index >= 0 && index < static_cast<int>(m_entries.size()))
@@ -612,6 +663,7 @@ void EditorWindow::OnZoneCountChanged()
     }
     value = std::max(1, std::min(kMaxZoneCount, value));
     m_zoneCountValue = value;
+    m_dirty = true;
 
     UpdateCanvasPreview();
     UpdateApplyButtons();
@@ -646,13 +698,15 @@ void EditorWindow::UpdateHint()
             {
                 SetWindowTextW(m_staticHint,
                                L"Grid: drag separators to resize; double-click to split; "
-                               L"Ctrl+click zones to multi-select, then right-click to merge.");
+                               L"Ctrl+click to multi-select, right-click to merge. "
+                               L"Arrows: nudge, Del: remove zone, Ctrl+Z/Y: undo/redo, Esc: cancel.");
             }
             else
             {
                 SetWindowTextW(m_staticHint,
                                L"Canvas: drag empty space to draw a zone, drag a zone to move it, drag a handle to "
-                               L"resize it; right-click a zone to delete it.");
+                               L"resize it; right-click a zone to delete it. "
+                               L"Arrows: nudge, Ctrl+Z/Y: undo/redo, Esc: cancel.");
             }
         }
     }
@@ -705,6 +759,8 @@ void EditorWindow::UpdateUndoState()
     {
         EnableMenuItem(m_menuEdit, IDM_EDIT_UNDO,
                        MF_BYCOMMAND | (m_undoStack.empty() ? MF_GRAYED : MF_ENABLED));
+        EnableMenuItem(m_menuEdit, IDM_EDIT_REDO,
+                       MF_BYCOMMAND | (m_redoStack.empty() ? MF_GRAYED : MF_ENABLED));
     }
 }
 
@@ -772,6 +828,7 @@ void EditorWindow::OnNewLayout()
         return;
     }
     PopulateLayoutList();
+    m_dirty = true;
     NotifyChanged();
 }
 
@@ -840,6 +897,7 @@ void EditorWindow::OnDuplicate()
     }
 
     PopulateLayoutList();
+    m_dirty = true;
     NotifyChanged();
 }
 
@@ -862,6 +920,7 @@ void EditorWindow::OnDelete()
     CustomLayouts::instance().DeleteLayout(entry.uuid);
     m_workingCopies.erase(entry.uuid);
     PopulateLayoutList();
+    m_dirty = true;
     NotifyChanged();
 }
 
@@ -882,9 +941,20 @@ void EditorWindow::OnRename()
     std::wstring name = data->name;
     const INT_PTR ret = DialogBoxParamW(m_hInstance, MAKEINTRESOURCEW(IDD_RENAME_LAYOUT), m_hwnd,
                                         &RenameLayoutDialogProc, reinterpret_cast<LPARAM>(&name));
-    if (ret != IDOK || name.empty())
+    if (ret != IDOK)
     {
         return;
+    }
+    if (name.empty())
+    {
+        MessageBoxW(m_hwnd, L"Layout name cannot be empty.", L"LiteZones", MB_OK | MB_ICONWARNING);
+        return;
+    }
+
+    const std::wstring originalName = name;
+    if (name != data->name)
+    {
+        name = MakeUniqueName(name);
     }
 
     LiteZonesTypes::CustomLayoutData updated = *data;
@@ -894,7 +964,15 @@ void EditorWindow::OnRename()
         return;
     }
     PopulateLayoutList();
+    m_dirty = true;
     NotifyChanged();
+
+    if (name != originalName)
+    {
+        wchar_t msg[256]{};
+        swprintf_s(msg, L"Name was \"%ls\" (already exists), saved as \"%ls\".", originalName.c_str(), name.c_str());
+        SetWindowTextW(m_staticHint, msg);
+    }
 }
 
 bool EditorWindow::BuildApplyLayout(int listIndex, LayoutData& out) const
@@ -976,6 +1054,10 @@ void EditorWindow::OnApply()
     AppliedLayouts::instance().SaveData();
     NotifyChanged();
     UpdateApplyButtons();
+
+    wchar_t msg[128]{};
+    swprintf_s(msg, L"Applied to Monitor %d.", comboIndex + 1);
+    SetWindowTextW(m_staticHint, msg);
 }
 
 void EditorWindow::OnApplyAll()
@@ -1002,17 +1084,26 @@ void EditorWindow::OnApplyAll()
     AppliedLayouts::instance().SaveData();
     NotifyChanged();
     UpdateApplyButtons();
+    SetWindowTextW(m_staticHint, L"Applied to all monitors.");
 }
 
 void EditorWindow::CreateMenuBar()
 {
     m_menuFile = CreateMenu();
+    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_NEW, L"&New Layout\tCtrl+N");
     AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_SAVE, L"&Save\tCtrl+S");
     AppendMenuW(m_menuFile, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_CLOSE, L"&Close\tAlt+F4");
 
     m_menuEdit = CreateMenu();
     AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_UNDO, L"&Undo\tCtrl+Z");
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_REDO, L"&Redo\tCtrl+Y");
+    AppendMenuW(m_menuEdit, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_RENAME, L"&Rename\tF2");
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_DELETE, L"&Delete\tDel");
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_DUPLICATE, L"&Duplicate\tCtrl+D");
+    AppendMenuW(m_menuEdit, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(m_menuEdit, MF_STRING, IDM_EDIT_SETTINGS, L"Settings...");
 
     HMENU menuHelp = CreateMenu();
     AppendMenuW(menuHelp, MF_STRING, IDM_HELP_ABOUT, L"&About LiteZones");
@@ -1036,6 +1127,7 @@ void EditorWindow::OnSave()
         }
     }
     PersistAllWorkingCopies();
+    m_dirty = false;
     NotifyChanged();
     UpdateApplyButtons();
 }
@@ -1049,6 +1141,54 @@ void EditorWindow::OnUndo()
 
     const UndoEntry entry = m_undoStack.back();
     m_undoStack.pop_back();
+
+    // Save current state to redo stack.
+    const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+    if (currentData)
+    {
+        UndoEntry redo;
+        redo.uuid = entry.uuid;
+        redo.name = entry.name;
+        redo.data = *currentData;
+        m_redoStack.push_back(std::move(redo));
+    }
+
+    m_workingCopies[entry.uuid] = entry.data;
+    CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+
+    for (size_t i = 0; i < m_entries.size(); ++i)
+    {
+        if (!m_entries[i].isTemplate && IsEqualGUID(m_entries[i].uuid, entry.uuid))
+        {
+            SendMessageW(m_listBox, LB_SETCURSEL, static_cast<WPARAM>(i), 0);
+            OnSelectionChanged();
+            break;
+        }
+    }
+    NotifyChanged();
+    UpdateUndoState();
+}
+
+void EditorWindow::OnRedo()
+{
+    if (m_redoStack.empty())
+    {
+        return;
+    }
+
+    const UndoEntry entry = m_redoStack.back();
+    m_redoStack.pop_back();
+
+    // Save current state to undo stack.
+    const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+    if (currentData)
+    {
+        UndoEntry undo;
+        undo.uuid = entry.uuid;
+        undo.name = entry.name;
+        undo.data = *currentData;
+        m_undoStack.push_back(std::move(undo));
+    }
 
     m_workingCopies[entry.uuid] = entry.data;
     CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
@@ -1073,13 +1213,14 @@ void EditorWindow::OnAbout()
                 L"Create and manage custom window layouts.\n"
                 L"Drag resizers to resize zones.\n"
                 L"Double-click to split, right-click to merge.\n"
-                L"Ctrl+Z to undo changes.",
+                L"Ctrl+Z to undo, Ctrl+Y to redo.",
                 L"About LiteZones",
                 MB_OK | MB_ICONINFORMATION);
 }
 
 void EditorWindow::PushUndoSnapshot()
 {
+    m_redoStack.clear();
     const int index = SelectedListIndex();
     if (index < 0 || index >= static_cast<int>(m_entries.size()))
     {
@@ -1181,19 +1322,31 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     case WM_GETMINMAXINFO:
     {
         auto* info = reinterpret_cast<MINMAXINFO*>(lParam);
-        info->ptMinTrackSize.x = kMinTrackWidth;
-        info->ptMinTrackSize.y = kMinTrackHeight;
+        info->ptMinTrackSize.x = ScaleForDpi(kMinTrackWidth, m_currentDpi);
+        info->ptMinTrackSize.y = ScaleForDpi(kMinTrackHeight, m_currentDpi);
         return 0;
     }
+
+    case WM_DPICHANGED:
+    {
+        m_currentDpi = HIWORD(wParam);
+        const auto* suggested = reinterpret_cast<const RECT*>(lParam);
+        SetWindowPos(hwnd, nullptr, suggested->left, suggested->top,
+                     suggested->right - suggested->left, suggested->bottom - suggested->top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+        LayoutControls();
+        return 0;
+    }
+
+    case WM_DISPLAYCHANGE:
+        PopulateMonitorCombo();
+        UpdateCanvasPreview();
+        return 0;
 
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE)
         {
             PostMessageW(hwnd, WM_CLOSE, 0, 0);
-        }
-        else if (wParam == 'Z' && (GetKeyState(VK_CONTROL) & 0x8000))
-        {
-            OnUndo();
         }
         return 0;
 
@@ -1246,6 +1399,9 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         case IDM_FILE_SAVE:
             OnSave();
             return 0;
+        case IDM_FILE_NEW:
+            OnNewLayout();
+            return 0;
         case IDM_FILE_APPLY:
             OnApply();
             return 0;
@@ -1257,6 +1413,24 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             return 0;
         case IDM_EDIT_UNDO:
             OnUndo();
+            return 0;
+        case IDM_EDIT_REDO:
+            OnRedo();
+            return 0;
+        case IDM_EDIT_RENAME:
+            OnRename();
+            return 0;
+        case IDM_EDIT_DELETE:
+            OnDelete();
+            return 0;
+        case IDM_EDIT_DUPLICATE:
+            OnDuplicate();
+            return 0;
+        case IDM_EDIT_SETTINGS:
+            if (SettingsDialog::Show(m_hwnd, m_hInstance))
+            {
+                NotifyChanged();
+            }
             return 0;
         case IDM_HELP_ABOUT:
             OnAbout();

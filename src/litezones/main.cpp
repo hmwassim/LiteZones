@@ -17,6 +17,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PWSTR, 
     if (GetLastError() == ERROR_ALREADY_EXISTS)
     {
         CloseHandle(mutex);
+        MessageBoxW(nullptr, L"LiteZones is already running.", L"LiteZones", MB_OK | MB_ICONINFORMATION);
         return 0;
     }
 
@@ -26,6 +27,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PWSTR, 
     if (!app.Init())
     {
         CloseHandle(mutex);
+        MessageBoxW(nullptr, L"LiteZones failed to initialize.\n\nPossible causes:\n- Another instance may be interfering\n- Required system hooks could not be installed\n- Config directory could not be created",
+                     L"LiteZones", MB_OK | MB_ICONERROR);
         return 1;
     }
 

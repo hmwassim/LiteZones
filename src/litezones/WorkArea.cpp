@@ -16,6 +16,13 @@ namespace
         {
         case WM_ERASEBKGND:
             return 1;
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps{};
+            BeginPaint(hwnd, &ps);
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
         default:
             return DefWindowProcW(hwnd, msg, wParam, lParam);
         }
