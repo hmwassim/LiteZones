@@ -27,9 +27,14 @@ public:
     WorkArea* WorkAreaFor(HMONITOR monitor);
     const WorkArea* WorkAreaFor(HMONITOR monitor) const;
 
-    // The work area whose rectangle contains the given point (in screen coordinates).
+    WorkArea* WorkAreaForWindow(HWND window, bool span);
+    const WorkArea* WorkAreaForWindow(HWND window, bool span) const;
+
     WorkArea* WorkAreaContainingPoint(POINT pt);
     const WorkArea* WorkAreaContainingPoint(POINT pt) const;
+
+    WorkArea* WorkAreaContainingPointWithFallback(POINT pt);
+    const WorkArea* WorkAreaContainingPointWithFallback(POINT pt) const;
 
 private:
     HINSTANCE m_hInstance = nullptr;

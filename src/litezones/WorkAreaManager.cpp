@@ -100,6 +100,40 @@ const WorkArea* WorkAreaManager::WorkAreaFor(HMONITOR monitor) const
     return it == m_workAreas.end() ? nullptr : &(*it);
 }
 
+WorkArea* WorkAreaManager::WorkAreaForWindow(HWND window, bool span)
+{
+    if (span)
+    {
+        return m_workAreas.empty() ? nullptr : &m_workAreas.front();
+    }
+
+    const HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
+    if (WorkArea* wa = WorkAreaFor(monitor))
+    {
+        return wa;
+    }
+
+    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+    return WorkAreaFor(primary);
+}
+
+const WorkArea* WorkAreaManager::WorkAreaForWindow(HWND window, bool span) const
+{
+    if (span)
+    {
+        return m_workAreas.empty() ? nullptr : &m_workAreas.front();
+    }
+
+    const HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
+    if (const WorkArea* wa = WorkAreaFor(monitor))
+    {
+        return wa;
+    }
+
+    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+    return WorkAreaFor(primary);
+}
+
 WorkArea* WorkAreaManager::WorkAreaContainingPoint(POINT pt)
 {
     auto it = std::find_if(m_workAreas.begin(), m_workAreas.end(), [&](const WorkArea& wa) { return RectContains(wa.WorkAreaRect(), pt); });
@@ -110,4 +144,24 @@ const WorkArea* WorkAreaManager::WorkAreaContainingPoint(POINT pt) const
 {
     auto it = std::find_if(m_workAreas.begin(), m_workAreas.end(), [&](const WorkArea& wa) { return RectContains(wa.WorkAreaRect(), pt); });
     return it == m_workAreas.end() ? nullptr : &(*it);
+}
+
+WorkArea* WorkAreaManager::WorkAreaContainingPointWithFallback(POINT pt)
+{
+    if (WorkArea* wa = WorkAreaContainingPoint(pt))
+    {
+        return wa;
+    }
+    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+    return WorkAreaFor(primary);
+}
+
+const WorkArea* WorkAreaManager::WorkAreaContainingPointWithFallback(POINT pt) const
+{
+    if (const WorkArea* wa = WorkAreaContainingPoint(pt))
+    {
+        return wa;
+    }
+    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+    return WorkAreaFor(primary);
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LayoutAssignedWindows.h"
 #include "LayoutEngine.h"
+#include "ZoneAssignmentStore.h"
 
 #include <windows.h>
 
@@ -21,7 +21,6 @@ public:
     WorkArea(const WorkArea&) = delete;
     WorkArea& operator=(const WorkArea&) = delete;
 
-    // Builds (or rebuilds) the layout from the given settings. Returns false if the layout is invalid.
     bool Init(const LayoutData& layoutData);
 
     HMONITOR Monitor() const { return m_monitor; }
@@ -31,17 +30,15 @@ public:
     const Layout* GetLayout() const { return m_layout.get(); }
     const LayoutData& GetLayoutData() const { return m_layoutData; }
 
-    // Lazily-created tool window covering the work area; the overlay draws into it.
     HWND GetWindow();
 
-    // Snaps the window into the given zones. Returns false when nothing was snapped.
     bool Snap(HWND window, const ZoneIndexSet& zones);
     bool Unsnap(HWND window);
 
     void ShowZones(const ZoneIndexSet& highlightZones);
     void HideZones();
 
-    LayoutAssignedWindows* LayoutWindows() { return m_layoutWindows.get(); }
+    ZoneAssignmentStore* AssignmentStore() { return &m_assignments; }
 
 private:
     bool EnsureWindow();
@@ -55,5 +52,5 @@ private:
     std::unique_ptr<Layout> m_layout;
     HWND m_window = nullptr;
     std::unique_ptr<class ZonesOverlay> m_overlay;
-    std::unique_ptr<LayoutAssignedWindows> m_layoutWindows;
+    ZoneAssignmentStore m_assignments;
 };

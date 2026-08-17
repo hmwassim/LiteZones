@@ -116,6 +116,16 @@ bool AppZoneHistory::SetAppLastZones(const std::wstring& processPath, const Zone
         return false;
     }
     m_history[processPath] = zones;
-    SaveData();
+    m_dirty = true;
     return true;
+}
+
+void AppZoneHistory::FlushIfDirty() const
+{
+    if (!m_dirty)
+    {
+        return;
+    }
+    m_dirty = false;
+    SaveData();
 }

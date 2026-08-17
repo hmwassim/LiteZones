@@ -1,6 +1,5 @@
 #include "KeyboardSnap.h"
 
-#include "LayoutAssignedWindows.h"
 #include "Settings.h"
 #include "WorkArea.h"
 #include "WorkAreaManager.h"
@@ -84,7 +83,7 @@ bool KeyboardSnap::MoveByDirectionAndIndex(HWND window, DWORD vkCode)
     }
     const int64_t numZones = static_cast<int64_t>(zones.size());
 
-    const ZoneIndexSet zoneIndexes = workArea->LayoutWindows()->GetZoneIndexSetFromWindow(window);
+    const ZoneIndexSet zoneIndexes = workArea->AssignmentStore()->GetZoneIndexSet(window);
     if (zoneIndexes.empty())
     {
         const ZoneIndex zone = (vkCode == VK_LEFT) ? static_cast<ZoneIndex>(numZones - 1) : 0;
@@ -126,7 +125,7 @@ bool KeyboardSnap::MoveByDirectionAndPosition(HWND window, DWORD vkCode)
     }
 
     std::vector<bool> used(static_cast<size_t>(zones.size()), false);
-    for (ZoneIndex id : workArea->LayoutWindows()->GetZoneIndexSetFromWindow(window))
+    for (ZoneIndex id : workArea->AssignmentStore()->GetZoneIndexSet(window))
     {
         if (id >= 0 && static_cast<size_t>(id) < used.size())
         {
@@ -232,29 +231,14 @@ void KeyboardSnap::UnsnapFromOtherWorkAreas(HWND window, WorkArea* keep)
     // zone stamp that the new snap just wrote.
     for (WorkArea& workArea : m_workAreaManager.WorkAreas())
     {
-        if (&workArea != keep && workArea.LayoutWindows())
+        if (&workArea != keep && workArea.AssignmentStore())
         {
-            workArea.LayoutWindows()->Dismiss(window);
+            workArea.AssignmentStore()->Dismiss(window);
         }
     }
 }
 
 WorkArea* KeyboardSnap::WorkAreaForWindow(HWND window) const
 {
-    if (m_settings.spanZonesAcrossMonitors)
-    {
-        std::vector<WorkArea>& workAreas = m_workAreaManager.WorkAreas();
-        return workAreas.empty() ? nullptr : &workAreas.front();
-    }
-
-    const HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
-    WorkArea* workArea = m_workAreaManager.WorkAreaFor(monitor);
-    if (workArea)
-    {
-        return workArea;
-    }
-
-    // Window not on a known monitor (e.g. just dragged off-screen): use primary.
-    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
-    return m_workAreaManager.WorkAreaFor(primary);
+    return m_workAreaManager.WorkAreaForWindow(window, m_settings.spanZonesAcrossMonitors);
 }

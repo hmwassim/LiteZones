@@ -25,6 +25,9 @@ public:
     ZoneIndexSet GetAppLastZoneIndexSet(const std::wstring& processPath) const;
     bool SetAppLastZones(const std::wstring& processPath, const ZoneIndexSet& zones);
 
+    // Flush pending writes to disk if dirty.
+    void FlushIfDirty() const;
+
     const HistoryMap& History() const { return m_history; }
 
     // Test hook: point LoadData/SaveData at a scratch file (empty = default).
@@ -38,4 +41,5 @@ private:
     std::wstring FilePath() const;
     std::unordered_map<std::wstring, ZoneIndexSet> m_history;
     std::wstring m_pathOverride;
+    mutable bool m_dirty = false;
 };

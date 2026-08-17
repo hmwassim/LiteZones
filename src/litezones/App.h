@@ -2,6 +2,7 @@
 
 #include "Hooks.h"
 #include "Settings.h"
+#include "TrayService.h"
 #include "WorkAreaManager.h"
 
 #include <windows.h>
@@ -27,18 +28,12 @@ private:
     LRESULT HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     bool CreateHiddenWindow();
-    bool AddTrayIcon();
-    void RemoveTrayIcon();
-    void ShowTrayMenu();
-    void UpdateTrayTip();
     void ToggleSnapping();
-    void ToggleAutostart();
     void ReloadConfig();
     void OpenConfigFolder();
     void ReloadWorkAreas(bool forceRelayout = true);
     void CycleLayoutOnMonitor();
     void OpenLayoutEditor();
-    bool IsAutostartEnabled() const;
 
     void HandleMoveSizeStart(HWND window);
     void HandleMoveSizeEnd();
@@ -50,7 +45,6 @@ private:
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
     bool m_snappingEnabled = true;
-    bool m_autostart = false;
 
     std::unique_ptr<FileWatcher> m_fileWatcher;
     std::unique_ptr<DragController> m_dragController;
@@ -58,4 +52,5 @@ private:
     std::unique_ptr<Hooks> m_hooks;
     std::unique_ptr<EditorWindow> m_editor;
     WorkAreaManager m_workAreaManager;
+    TrayService m_tray;
 };

@@ -3,7 +3,6 @@
 #include "AppZoneHistory.h"
 #include "Colors.h"
 #include "Settings.h"
-#include "WindowProperties.h"
 #include "WindowUtils.h"
 #include "ZonesOverlay.h"
 
@@ -63,7 +62,7 @@ WorkArea::WorkArea(WorkArea&& other) noexcept :
     m_layout(std::move(other.m_layout)),
     m_window(other.m_window),
     m_overlay(std::move(other.m_overlay)),
-    m_layoutWindows(std::move(other.m_layoutWindows))
+    m_assignments(std::move(other.m_assignments))
 {
     other.m_hInstance = nullptr;
     other.m_monitor = nullptr;
@@ -89,7 +88,7 @@ WorkArea& WorkArea::operator=(WorkArea&& other) noexcept
         m_layout = std::move(other.m_layout);
         m_window = other.m_window;
         m_overlay = std::move(other.m_overlay);
-        m_layoutWindows = std::move(other.m_layoutWindows);
+        m_assignments = std::move(other.m_assignments);
 
         other.m_hInstance = nullptr;
         other.m_monitor = nullptr;
@@ -164,7 +163,6 @@ bool WorkArea::EnsureWindow()
     ShowWindow(m_window, SW_HIDE);
 
     m_overlay = std::make_unique<ZonesOverlay>(m_window);
-    m_layoutWindows = std::make_unique<LayoutAssignedWindows>();
     return true;
 }
 
@@ -175,11 +173,11 @@ bool WorkArea::Snap(HWND window, const ZoneIndexSet& zones)
         return false;
     }
 
-    if (!m_layoutWindows)
+    if (!m_window)
     {
         EnsureWindow();
     }
-    if (!m_layoutWindows)
+    if (!m_window)
     {
         return false;
     }
@@ -192,14 +190,12 @@ bool WorkArea::Snap(HWND window, const ZoneIndexSet& zones)
         }
     }
 
-    m_layoutWindows->Assign(window, zones);
+    m_assignments.Assign(window, zones);
 
     const RECT rect = m_layout->GetCombinedZonesRect(zones);
     const RECT adjustedRect = WindowUtils::AdjustRectForSizeWindowToRect(window, rect, m_window);
     WindowUtils::SaveWindowSizeAndOrigin(window);
     WindowUtils::SizeWindowToRect(window, adjustedRect, TRUE);
-
-    StampZoneIndexProperty(window, ZoneIndexSetBitmask::FromIndexSet(zones));
 
     const std::wstring processPath = WindowUtils::GetProcessPath(window);
     if (!processPath.empty())
@@ -216,11 +212,7 @@ bool WorkArea::Unsnap(HWND window)
         return false;
     }
 
-    if (m_layoutWindows)
-    {
-        m_layoutWindows->Dismiss(window);
-    }
-    RemoveZoneIndexProperty(window);
+    m_assignments.Dismiss(window);
     return true;
 }
 

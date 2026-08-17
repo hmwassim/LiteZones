@@ -20,23 +20,11 @@
 
 namespace
 {
-    constexpr UINT kTrayCallbackMessage = WM_APP + 1;
     constexpr UINT kSettingsChangedMessage = WM_APP + 2;
-    constexpr UINT kTrayIconId = 1;
+    constexpr UINT kFlushTimerId = 1;
     constexpr wchar_t kWindowClassName[] = L"LiteZonesWindow";
     constexpr wchar_t kWindowTitle[] = L"LiteZones";
-    constexpr wchar_t kRunKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-    constexpr wchar_t kRunValueName[] = L"LiteZones";
 
-    constexpr UINT kMenuToggleSnapping = 40001;
-    constexpr UINT kMenuCycleLayout = 40002;
-    constexpr UINT kMenuReloadConfig = 40003;
-    constexpr UINT kMenuOpenFolder = 40004;
-    constexpr UINT kMenuAutostart = 40005;
-    constexpr UINT kMenuExit = 40006;
-    constexpr UINT kMenuEditLayouts = 40007;
-
-    // The cycle rotates through the built-in templates then every custom layout.
     std::vector<LayoutData> BuildLayoutCycleCandidates()
     {
         std::vector<LayoutData> candidates;
@@ -104,14 +92,21 @@ bool App::Init()
     AppZoneHistory::instance().LoadData();
     CustomLayouts::instance().LoadData();
     AppliedLayouts::instance().LoadData();
-    m_autostart = IsAutostartEnabled();
     ReloadWorkAreas();
 
     if (!CreateHiddenWindow())
     {
         return false;
     }
-    if (!AddTrayIcon())
+
+    m_tray.SetOnToggleSnapping([this] { ToggleSnapping(); });
+    m_tray.SetOnCycleLayout([this] { CycleLayoutOnMonitor(); });
+    m_tray.SetOnEditLayouts([this] { OpenLayoutEditor(); });
+    m_tray.SetOnReloadConfig([this] { ReloadConfig(); });
+    m_tray.SetOnOpenFolder([this] { OpenConfigFolder(); });
+    m_tray.SetOnExit([this] { PostMessageW(m_hwnd, WM_CLOSE, 0, 0); });
+
+    if (!m_tray.AddIcon(m_hwnd, m_hInstance))
     {
         return false;
     }
@@ -126,6 +121,8 @@ bool App::Init()
 
     m_fileWatcher = std::make_unique<FileWatcher>();
     m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json", L"custom-layouts.json", L"applied-layouts.json" });
+
+    SetTimer(m_hwnd, kFlushTimerId, 500, nullptr);
 
     return true;
 }
@@ -165,82 +162,6 @@ bool App::CreateHiddenWindow()
     return m_hwnd != nullptr;
 }
 
-bool App::AddTrayIcon()
-{
-    NOTIFYICONDATAW nid{};
-    nid.cbSize = sizeof(nid);
-    nid.hWnd = m_hwnd;
-    nid.uID = kTrayIconId;
-    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    nid.uCallbackMessage = kTrayCallbackMessage;
-    nid.hIcon = LoadIconW(m_hInstance, MAKEINTRESOURCE(IDI_APP));
-    wcscpy_s(nid.szTip, kWindowTitle);
-    return Shell_NotifyIconW(NIM_ADD, &nid) != FALSE;
-}
-
-void App::RemoveTrayIcon()
-{
-    NOTIFYICONDATAW nid{};
-    nid.cbSize = sizeof(nid);
-    nid.hWnd = m_hwnd;
-    nid.uID = kTrayIconId;
-    Shell_NotifyIconW(NIM_DELETE, &nid);
-}
-
-void App::ShowTrayMenu()
-{
-    POINT pt{};
-    GetCursorPos(&pt);
-
-    HMENU menu = CreatePopupMenu();
-    if (!menu)
-    {
-        return;
-    }
-
-    AppendMenuW(menu, MF_STRING | (m_snappingEnabled ? MF_CHECKED : 0), kMenuToggleSnapping, L"Zone snapping");
-    AppendMenuW(menu, MF_STRING, kMenuCycleLayout, L"Cycle layout on monitor");
-    AppendMenuW(menu, MF_STRING, kMenuEditLayouts, L"Edit layouts...");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING, kMenuReloadConfig, L"Reload config");
-    AppendMenuW(menu, MF_STRING, kMenuOpenFolder, L"Open config folder");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING | (m_autostart ? MF_CHECKED : 0), kMenuAutostart, L"Start with Windows");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING, kMenuExit, L"Exit");
-
-    SetForegroundWindow(m_hwnd);
-    const UINT selected = static_cast<UINT>(TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, 0, m_hwnd, nullptr));
-    DestroyMenu(menu);
-
-    switch (selected)
-    {
-    case kMenuToggleSnapping:
-        ToggleSnapping();
-        break;
-    case kMenuCycleLayout:
-        CycleLayoutOnMonitor();
-        break;
-    case kMenuEditLayouts:
-        OpenLayoutEditor();
-        break;
-    case kMenuReloadConfig:
-        ReloadConfig();
-        break;
-    case kMenuOpenFolder:
-        OpenConfigFolder();
-        break;
-    case kMenuAutostart:
-        ToggleAutostart();
-        break;
-    case kMenuExit:
-        PostMessageW(m_hwnd, WM_CLOSE, 0, 0);
-        break;
-    default:
-        break;
-    }
-}
-
 void App::ToggleSnapping()
 {
     m_snappingEnabled = !m_snappingEnabled;
@@ -252,7 +173,7 @@ void App::ToggleSnapping()
     {
         m_hooks->SetSnappingEnabled(m_snappingEnabled);
     }
-    UpdateTrayTip();
+    m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
 }
 
 void App::ReloadConfig()
@@ -261,12 +182,11 @@ void App::ReloadConfig()
     CustomLayouts::instance().LoadData();
     AppliedLayouts::instance().LoadData();
     ReloadWorkAreas();
-    UpdateTrayTip();
+    m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
 }
 
 void App::ReloadWorkAreas(bool forceRelayout)
 {
-    // Abort any active drag first: it holds pointers into m_workAreaManager.
     if (m_dragController)
     {
         m_dragController->MoveSizeEnd();
@@ -328,57 +248,6 @@ void App::OpenConfigFolder()
     ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
-void App::ToggleAutostart()
-{
-    HKEY key = nullptr;
-    if (RegCreateKeyExW(HKEY_CURRENT_USER, kRunKey, 0, nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr) != ERROR_SUCCESS)
-    {
-        return;
-    }
-
-    m_autostart = !m_autostart;
-    if (m_autostart)
-    {
-        wchar_t path[MAX_PATH]{};
-        if (GetModuleFileNameW(nullptr, path, MAX_PATH) > 0)
-        {
-            const DWORD size = static_cast<DWORD>((wcslen(path) + 1) * sizeof(wchar_t));
-            RegSetValueExW(key, kRunValueName, 0, REG_SZ, reinterpret_cast<const BYTE*>(path), size);
-        }
-    }
-    else
-    {
-        RegDeleteValueW(key, kRunValueName);
-    }
-    RegCloseKey(key);
-}
-
-bool App::IsAutostartEnabled() const
-{
-    HKEY key = nullptr;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, kRunKey, 0, KEY_READ, &key) != ERROR_SUCCESS)
-    {
-        return false;
-    }
-
-    wchar_t value[MAX_PATH]{};
-    DWORD size = sizeof(value);
-    const LONG result = RegQueryValueExW(key, kRunValueName, nullptr, nullptr, reinterpret_cast<BYTE*>(value), &size);
-    RegCloseKey(key);
-    return result == ERROR_SUCCESS && value[0] != L'\0';
-}
-
-void App::UpdateTrayTip()
-{
-    NOTIFYICONDATAW nid{};
-    nid.cbSize = sizeof(nid);
-    nid.hWnd = m_hwnd;
-    nid.uID = kTrayIconId;
-    nid.uFlags = NIF_TIP;
-    wcscpy_s(nid.szTip, m_snappingEnabled ? kWindowTitle : L"LiteZones (disabled)");
-    Shell_NotifyIconW(NIM_MODIFY, &nid);
-}
-
 void App::HandleMoveSizeStart(HWND window)
 {
     if (!m_dragController)
@@ -436,7 +305,6 @@ void App::HandleSnapHotkey(DWORD vkCode)
         return;
     }
 
-    // Normalize numpad digits to their '0'-'9' equivalents.
     if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
     {
         vkCode = static_cast<DWORD>('0') + (vkCode - VK_NUMPAD0);
@@ -457,7 +325,6 @@ void App::HandleWindowCreated(HWND window)
         return;
     }
 
-    // Already snapped (e.g. re-shown or moved): leave it alone.
     if (!RetrieveZoneIndexProperty(window).ToIndexSet().empty())
     {
         return;
@@ -476,12 +343,7 @@ void App::HandleWindowCreated(HWND window)
 
     POINT pt{};
     GetCursorPos(&pt);
-    WorkArea* workArea = m_workAreaManager.WorkAreaContainingPoint(pt);
-    if (!workArea)
-    {
-        const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
-        workArea = m_workAreaManager.WorkAreaFor(primary);
-    }
+    WorkArea* workArea = m_workAreaManager.WorkAreaContainingPointWithFallback(pt);
     if (!workArea)
     {
         return;
@@ -509,17 +371,26 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    constexpr UINT kTrayCallbackMessage = WM_APP + 1;
+
     switch (msg)
     {
     case kTrayCallbackMessage:
         if (LOWORD(lParam) == WM_RBUTTONUP || LOWORD(lParam) == WM_LBUTTONUP)
         {
-            ShowTrayMenu();
+            m_tray.ShowMenu(m_hwnd, m_snappingEnabled);
         }
         return 0;
 
     case kSettingsChangedMessage:
         ReloadConfig();
+        return 0;
+
+    case WM_TIMER:
+        if (wParam == kFlushTimerId)
+        {
+            AppZoneHistory::instance().FlushIfDirty();
+        }
         return 0;
 
     case WM_DISPLAYCHANGE:
@@ -572,7 +443,9 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_DESTROY:
-        RemoveTrayIcon();
+        KillTimer(m_hwnd, kFlushTimerId);
+        AppZoneHistory::instance().FlushIfDirty();
+        m_tray.RemoveIcon();
         PostQuitMessage(0);
         return 0;
 
