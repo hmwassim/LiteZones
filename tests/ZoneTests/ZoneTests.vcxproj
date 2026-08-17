@@ -87,6 +87,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ZoneTests.cpp" />
+    <ClCompile Include="ZoneMathTests.cpp" />
+    <ClCompile Include="LayoutTests.cpp" />
+    <ClCompile Include="EditorTests.cpp" />
+    <ClCompile Include="StoreTests.cpp" />
+    <ClCompile Include="JsonTests.cpp" />
+    <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="..\..\src\litezones\AppZoneHistory.cpp" />
     <ClCompile Include="..\..\src\litezones\AppliedLayouts.cpp" />
     <ClCompile Include="..\..\src\litezones\CustomLayouts.cpp" />
@@ -96,11 +102,13 @@
     <ClCompile Include="..\..\src\litezones\MonitorManager.cpp" />
     <ClCompile Include="..\..\src\litezones\Paths.cpp" />
     <ClCompile Include="..\..\src\litezones\Settings.cpp" />
-    <ClCompile Include="..\..\src\litezones\util.cpp" />
+    <ClCompile Include="..\..\src\litezones\GuidUtils.cpp" />
+    <ClCompile Include="..\..\src\litezones\ZoneNavigation.cpp" />
     <ClCompile Include="..\..\src\litezones\WindowProperties.cpp" />
     <ClCompile Include="..\..\src\litezones\Zone.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="TestHarness.h" />
     <ClInclude Include="..\..\src\litezones\AppZoneHistory.h" />
     <ClInclude Include="..\..\src\litezones\AppliedLayouts.h" />
     <ClInclude Include="..\..\src\litezones\CanvasMath.h" />
@@ -112,7 +120,8 @@
     <ClInclude Include="..\..\src\litezones\MonitorManager.h" />
     <ClInclude Include="..\..\src\litezones\Paths.h" />
     <ClInclude Include="..\..\src\litezones\Settings.h" />
-    <ClInclude Include="..\..\src\litezones\util.h" />
+    <ClInclude Include="..\..\src\litezones\GuidUtils.h" />
+    <ClInclude Include="..\..\src\litezones\ZoneNavigation.h" />
     <ClInclude Include="..\..\src\litezones\WindowProperties.h" />
     <ClInclude Include="..\..\src\litezones\Zone.h" />
   </ItemGroup>

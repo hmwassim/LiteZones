@@ -9,7 +9,7 @@ Standalone Windows tiling window manager. Single native C++17/Win32 executable -
 | Idle CPU | 0% (event-driven) |
 | Dependencies | Zero (static `/MT`, hand-rolled JSON) |
 | Overlay | Direct2D, rendered only while dragging |
-| Tests | 29 unit test suites |
+| Tests | 37 unit test suites |
 
 ## Quick Start
 
@@ -182,7 +182,7 @@ tools\build.cmd Debug       bin\x64\Debug\LiteZones.exe
 bin\x64\Debug\ZoneTests.exe
 ```
 
-29 test suites covering: zone math, layout engine (all template types), grid data operations, canvas geometry, GUID helpers, custom/applied layout stores, app zone history.
+37 test suites covering: zone math, layout engine (all template types), grid data operations, canvas geometry, GUID helpers, custom/applied layout stores, app zone history, monitor ordering, zone navigation, layout helpers.
 
 ### Build Configuration
 
@@ -211,10 +211,14 @@ src/litezones/
   CustomLayouts.cpp     Custom layout store
   AppliedLayouts.cpp    Per-monitor layout assignments
   AppZoneHistory.cpp    App-to-zone mapping persistence
+  TrayService.cpp       System tray icon and menu
+  ZoneAssignmentStore.cpp  Unified zone assignment persistence
   json.cpp              Hand-rolled JSON parser/serializer
+  GuidUtils.cpp         GUID parsing/formatting and layout type helpers
+  ZoneNavigation.cpp    Arrow-key zone navigation (complex-number math)
   ...                   Zone math, window utils, colors, paths, etc.
 
-tests/ZoneTests/        29 unit test suites (no framework dependencies)
+tests/ZoneTests/        37 unit test suites (7 files, no framework dependencies)
 tools/build.cmd         MSBuild wrapper (auto-locates VS 2022)
 docs/                   Architecture analysis, implementation plan, config reference
 ```

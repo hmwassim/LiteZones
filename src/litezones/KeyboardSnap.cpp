@@ -3,7 +3,7 @@
 #include "Settings.h"
 #include "WorkArea.h"
 #include "WorkAreaManager.h"
-#include "util.h"
+#include "ZoneNavigation.h"
 
 KeyboardSnap::KeyboardSnap(WorkAreaManager& workAreaManager, const SettingsData& settings) :
     m_workAreaManager(workAreaManager), m_settings(settings)

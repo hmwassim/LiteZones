@@ -109,7 +109,8 @@
     <ClCompile Include="Paths.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="TrayService.cpp" />
-    <ClCompile Include="util.cpp" />
+    <ClCompile Include="GuidUtils.cpp" />
+    <ClCompile Include="ZoneNavigation.cpp" />
     <ClCompile Include="WindowProcessing.cpp" />
     <ClCompile Include="WindowProperties.cpp" />
     <ClCompile Include="WindowUtils.cpp" />
@@ -137,13 +138,15 @@
     <ClInclude Include="KeyboardSnap.h" />
     <ClInclude Include="LayoutAssignedWindows.h" />
     <ClInclude Include="LayoutEngine.h" />
+    <ClInclude Include="LayoutHelpers.h" />
     <ClInclude Include="LayoutTypes.h" />
     <ClInclude Include="MonitorManager.h" />
     <ClInclude Include="Paths.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="TrayService.h" />
-    <ClInclude Include="util.h" />
+    <ClInclude Include="GuidUtils.h" />
+    <ClInclude Include="ZoneNavigation.h" />
     <ClInclude Include="WindowProcessing.h" />
     <ClInclude Include="WindowProperties.h" />
     <ClInclude Include="WindowUtils.h" />

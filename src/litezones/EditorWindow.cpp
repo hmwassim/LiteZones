@@ -8,7 +8,6 @@
 #include "LayoutHelpers.h"
 #include "MonitorManager.h"
 #include "resource.h"
-#include "util.h"
 
 #include <objbase.h>
 

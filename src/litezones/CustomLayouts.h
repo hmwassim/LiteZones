@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LayoutTypes.h"
-#include "util.h"
+#include "GuidUtils.h"
 
 #include <windows.h>
 
