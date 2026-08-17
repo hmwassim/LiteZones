@@ -26,8 +26,8 @@ namespace
     // string plus the instance component (which it already contains).
     std::wstring DeviceKeyFromJson(const Json& device)
     {
-        const std::wstring& monitor = device.At(kMonitor).AsString();
-        const std::wstring& instance = device.At(kMonitorInstance).AsString();
+        const std::wstring monitor = device.At(kMonitor).AsString();
+        const std::wstring instance = device.At(kMonitorInstance).AsString();
         if (monitor.empty())
         {
             return L"";

@@ -99,8 +99,8 @@ namespace
                 result->grid = IsDlgButtonChecked(dlg, IDC_NEW_GRID) == BST_CHECKED;
                 if (result->grid)
                 {
-                    result->rows = std::max(1, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE)));
-                    result->columns = std::max(1, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE)));
+                    result->rows = std::max(1, std::min(16, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE))));
+                    result->columns = std::max(1, std::min(16, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE))));
                 }
                 EndDialog(dlg, IDOK);
                 return TRUE;
@@ -151,6 +151,15 @@ EditorWindow::EditorWindow(HINSTANCE hInstance, HWND notifyWindow) :
 {
 }
 
+EditorWindow::~EditorWindow()
+{
+    if (m_hwnd)
+    {
+        DestroyWindow(m_hwnd);
+        m_hwnd = nullptr;
+    }
+}
+
 bool EditorWindow::Create()
 {
     WNDCLASSEXW wc{};
@@ -181,6 +190,8 @@ bool EditorWindow::Create()
     PopulateMonitorCombo();
     PopulateLayoutList();
     SelectActiveLayout();
+
+    m_hAccel = LoadAcceleratorsW(m_hInstance, MAKEINTRESOURCEW(IDA_EDITOR));
     return true;
 }
 

@@ -294,7 +294,7 @@ void CustomLayouts::LoadData()
             {
                 continue;
             }
-            const std::wstring& name = entry.At(kName).AsString();
+            const std::wstring name = entry.At(kName).AsString();
             if (name.empty())
             {
                 continue;
@@ -307,7 +307,7 @@ void CustomLayouts::LoadData()
 
             FancyZonesDataTypes::CustomLayoutData data;
             data.name = name;
-            const std::wstring& type = entry.At(kType).AsString();
+            const std::wstring type = entry.At(kType).AsString();
             if (type == kGridType)
             {
                 data.type = FancyZonesDataTypes::CustomLayoutType::Grid;

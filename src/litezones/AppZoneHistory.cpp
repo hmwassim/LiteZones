@@ -47,7 +47,7 @@ void AppZoneHistory::LoadData()
                 continue;
             }
 
-            const std::wstring& appPath = entry.At(kAppPath).AsString();
+            const std::wstring appPath = entry.At(kAppPath).AsString();
             if (appPath.empty())
             {
                 continue;

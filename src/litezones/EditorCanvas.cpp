@@ -338,7 +338,6 @@ namespace
                                  DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
         HFONT oldFont = static_cast<HFONT>(SelectObject(dc, font));
         HPEN borderPen = CreatePen(PS_SOLID, 1, colors.borderColor);
-        HPEN highlightPen = CreatePen(PS_SOLID, 2, colors.highlightColor);
         HPEN oldPen = static_cast<HPEN>(SelectObject(dc, borderPen));
 
         std::vector<EditorCanvas::ZoneRect> drawnZones;
@@ -470,7 +469,6 @@ namespace
         SelectObject(dc, oldPen);
         SelectObject(dc, oldFont);
         DeleteObject(borderPen);
-        DeleteObject(highlightPen);
         DeleteObject(font);
         DeleteObject(fillBrush);
         DeleteObject(borderBrush);

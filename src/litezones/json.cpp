@@ -545,7 +545,7 @@ bool Json::AsBool(bool fallback) const
     return m_type == Type::Bool ? m_bool : fallback;
 }
 
-const std::wstring& Json::AsString(const std::wstring& fallback) const
+std::wstring Json::AsString(const std::wstring& fallback) const
 {
     return m_type == Type::String ? m_string : fallback;
 }

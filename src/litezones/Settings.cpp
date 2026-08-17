@@ -93,7 +93,7 @@ void Settings::Load()
             fresh.excludedApps.clear();
             for (size_t i = 0; i < excluded.Size(); ++i)
             {
-                const std::wstring& app = excluded.At(i).AsString();
+                const std::wstring app = excluded.At(i).AsString();
                 if (!app.empty())
                 {
                     fresh.excludedApps.push_back(app);

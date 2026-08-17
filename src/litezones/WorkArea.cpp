@@ -53,9 +53,49 @@ WorkArea::WorkArea(HINSTANCE hInstance, HMONITOR monitor, const RECT& workAreaRe
 {
 }
 
-WorkArea::WorkArea(WorkArea&&) noexcept = default;
+WorkArea::WorkArea(WorkArea&& other) noexcept :
+    m_hInstance(other.m_hInstance),
+    m_monitor(other.m_monitor),
+    m_workAreaRect(other.m_workAreaRect),
+    m_layoutData(std::move(other.m_layoutData)),
+    m_layout(std::move(other.m_layout)),
+    m_window(other.m_window),
+    m_overlay(std::move(other.m_overlay)),
+    m_layoutWindows(std::move(other.m_layoutWindows))
+{
+    other.m_hInstance = nullptr;
+    other.m_monitor = nullptr;
+    other.m_workAreaRect = {};
+    other.m_window = nullptr;
+}
 
-WorkArea& WorkArea::operator=(WorkArea&&) noexcept = default;
+WorkArea& WorkArea::operator=(WorkArea&& other) noexcept
+{
+    if (this != &other)
+    {
+        // Destroy our current window/overlay before taking ownership of the other's.
+        m_overlay.reset();
+        if (m_window)
+        {
+            DestroyWindow(m_window);
+        }
+
+        m_hInstance = other.m_hInstance;
+        m_monitor = other.m_monitor;
+        m_workAreaRect = other.m_workAreaRect;
+        m_layoutData = std::move(other.m_layoutData);
+        m_layout = std::move(other.m_layout);
+        m_window = other.m_window;
+        m_overlay = std::move(other.m_overlay);
+        m_layoutWindows = std::move(other.m_layoutWindows);
+
+        other.m_hInstance = nullptr;
+        other.m_monitor = nullptr;
+        other.m_workAreaRect = {};
+        other.m_window = nullptr;
+    }
+    return *this;
+}
 
 WorkArea::~WorkArea()
 {

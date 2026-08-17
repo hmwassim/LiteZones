@@ -138,14 +138,31 @@ namespace Paths
         std::string utf8(static_cast<size_t>(utf8Len), '\0');
         WideCharToMultiByte(CP_UTF8, 0, normalized.c_str(), static_cast<int>(normalized.size()), utf8.data(), utf8Len, nullptr, nullptr);
 
-        HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+        // Atomic write: write to a temporary file next to the target, then
+        // rename over it.  If the process crashes mid-write the original file
+        // is untouched.
+        const std::wstring tempPath = path + L".tmp";
+        HANDLE file = CreateFileW(tempPath.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (file == INVALID_HANDLE_VALUE)
         {
             return false;
         }
         DWORD written = 0;
         const BOOL ok = WriteFile(file, utf8.data(), static_cast<DWORD>(utf8.size()), &written, nullptr);
+        FlushFileBuffers(file);
         CloseHandle(file);
-        return ok && written == utf8.size();
+
+        if (!ok || written != utf8.size())
+        {
+            DeleteFileW(tempPath.c_str());
+            return false;
+        }
+
+        if (!MoveFileExW(tempPath.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING))
+        {
+            DeleteFileW(tempPath.c_str());
+            return false;
+        }
+        return true;
     }
 }

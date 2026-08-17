@@ -18,9 +18,13 @@ bool KeyboardSnap::HandleKey(HWND window, DWORD vkCode)
         return false;
     }
 
-    if (vkCode >= '0' && vkCode <= '9')
+    if (vkCode >= '1' && vkCode <= '9')
     {
-        return SnapByZoneNumber(window, static_cast<ZoneIndex>(vkCode - '0'));
+        return SnapByZoneNumber(window, static_cast<ZoneIndex>(vkCode - '1'));
+    }
+    if (vkCode == '0')
+    {
+        return SnapByZoneNumber(window, static_cast<ZoneIndex>(9));
     }
 
     if (vkCode == VK_LEFT || vkCode == VK_RIGHT || vkCode == VK_UP || vkCode == VK_DOWN)

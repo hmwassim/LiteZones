@@ -47,7 +47,7 @@ public:
     // Typed accessors with defaults
     double AsNumber(double fallback = 0.0) const;
     bool AsBool(bool fallback = false) const;
-    const std::wstring& AsString(const std::wstring& fallback = L"") const;
+    std::wstring AsString(const std::wstring& fallback = L"") const;
 
     // Serialize. Indented uses 2-space indent; compact writes on one line.
     std::wstring SerializeIndented() const;

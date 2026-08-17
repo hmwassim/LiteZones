@@ -17,7 +17,7 @@ class EditorWindow
 {
 public:
     EditorWindow(HINSTANCE hInstance, HWND notifyWindow);
-    ~EditorWindow() = default;
+    ~EditorWindow();
 
     EditorWindow(const EditorWindow&) = delete;
     EditorWindow& operator=(const EditorWindow&) = delete;
@@ -27,6 +27,7 @@ public:
     void Close();
 
     HWND Hwnd() const { return m_hwnd; }
+    HACCEL GetAccel() const { return m_hAccel; }
     bool IsOpen() const { return m_hwnd != nullptr; }
 
     // Called after any change that persists to the stores (layout added/deleted,
@@ -112,6 +113,7 @@ private:
     HMENU m_menuFile = nullptr;
     HMENU m_menuEdit = nullptr;
     bool m_initialSelectionDone = false;
+    HACCEL m_hAccel = nullptr;
 
     struct UndoEntry
     {

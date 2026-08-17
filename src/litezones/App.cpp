@@ -130,7 +130,6 @@ bool App::Init()
     m_fileWatcher = std::make_unique<FileWatcher>();
     m_fileWatcher->Start(m_hwnd, kSettingsChangedMessage, Paths::ConfigDir(), { L"settings.json", L"custom-layouts.json", L"applied-layouts.json" });
 
-    OpenLayoutEditor();
     return true;
 }
 
@@ -139,6 +138,13 @@ int App::Run()
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0) > 0)
     {
+        if (m_editor && m_editor->IsOpen() && m_editor->GetAccel())
+        {
+            if (TranslateAcceleratorW(m_editor->Hwnd(), m_editor->GetAccel(), &msg))
+            {
+                continue;
+            }
+        }
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
