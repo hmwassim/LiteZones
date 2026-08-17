@@ -6,6 +6,7 @@ namespace
 {
     constexpr DWORD kWatchBufferSize = 64 * 1024;
     constexpr DWORD kWatchFilter = FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SIZE;
+    constexpr DWORD kStopEventIndex = WAIT_OBJECT_0 + 1;
 }
 
 FileWatcher::~FileWatcher()
@@ -21,9 +22,17 @@ bool FileWatcher::Start(HWND hwnd, UINT msg, const std::wstring& directory, std:
     m_msg = msg;
     m_watchNames = std::move(watchNames);
 
-    m_dirHandle = CreateFileW(directory.c_str(), FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    m_stopEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    if (!m_stopEvent)
+    {
+        return false;
+    }
+
+    m_dirHandle = CreateFileW(directory.c_str(), FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
     if (m_dirHandle == INVALID_HANDLE_VALUE)
     {
+        CloseHandle(m_stopEvent);
+        m_stopEvent = nullptr;
         return false;
     }
 
@@ -32,6 +41,8 @@ bool FileWatcher::Start(HWND hwnd, UINT msg, const std::wstring& directory, std:
     {
         CloseHandle(m_dirHandle);
         m_dirHandle = INVALID_HANDLE_VALUE;
+        CloseHandle(m_stopEvent);
+        m_stopEvent = nullptr;
         return false;
     }
     return true;
@@ -39,18 +50,32 @@ bool FileWatcher::Start(HWND hwnd, UINT msg, const std::wstring& directory, std:
 
 void FileWatcher::Stop()
 {
+    if (m_stopEvent)
+    {
+        SetEvent(m_stopEvent);
+    }
     if (m_dirHandle != INVALID_HANDLE_VALUE)
     {
-        // Closing the directory handle makes ReadDirectoryChangesW return.
-        CloseHandle(m_dirHandle);
-        m_dirHandle = INVALID_HANDLE_VALUE;
+        CancelIo(m_dirHandle);
     }
     if (m_thread)
     {
-        WaitForSingleObject(m_thread, 2000);
+        WaitForSingleObject(m_thread, 500);
         CloseHandle(m_thread);
         m_thread = nullptr;
     }
+    if (m_dirHandle != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(m_dirHandle);
+        m_dirHandle = INVALID_HANDLE_VALUE;
+    }
+    if (m_stopEvent)
+    {
+        CloseHandle(m_stopEvent);
+        m_stopEvent = nullptr;
+    }
+    ZeroMemory(&m_overlapped, sizeof(m_overlapped));
+    m_hwnd = nullptr;
 }
 
 DWORD WINAPI FileWatcher::ThreadProc(LPVOID param)
@@ -62,18 +87,49 @@ DWORD WINAPI FileWatcher::ThreadProc(LPVOID param)
 DWORD FileWatcher::Run()
 {
     std::vector<BYTE> buffer(kWatchBufferSize);
+    HANDLE events[2] = { m_overlapped.hEvent, m_stopEvent };
+
     while (true)
     {
         DWORD bytesReturned = 0;
-        const BOOL ok = ReadDirectoryChangesW(m_dirHandle, buffer.data(), static_cast<DWORD>(buffer.size()), FALSE, kWatchFilter, &bytesReturned, nullptr, nullptr);
-        if (!ok)
+        ZeroMemory(&m_overlapped, sizeof(m_overlapped));
+        m_overlapped.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        if (!m_overlapped.hEvent)
         {
             break;
         }
-        if (bytesReturned == 0)
+        events[0] = m_overlapped.hEvent;
+
+        const BOOL ok = ReadDirectoryChangesW(m_dirHandle, buffer.data(), static_cast<DWORD>(buffer.size()), FALSE, kWatchFilter, &bytesReturned, &m_overlapped, nullptr);
+        if (!ok)
         {
+            CloseHandle(m_overlapped.hEvent);
+            break;
+        }
+
+        const DWORD waitResult = WaitForMultipleObjects(2, events, FALSE, INFINITE);
+
+        if (waitResult == kStopEventIndex)
+        {
+            CancelIo(m_dirHandle);
+            GetOverlappedResult(m_dirHandle, &m_overlapped, &bytesReturned, TRUE);
+            CloseHandle(m_overlapped.hEvent);
+            break;
+        }
+
+        if (waitResult != WAIT_OBJECT_0)
+        {
+            CloseHandle(m_overlapped.hEvent);
+            break;
+        }
+
+        if (!GetOverlappedResult(m_dirHandle, &m_overlapped, &bytesReturned, FALSE) || bytesReturned == 0)
+        {
+            CloseHandle(m_overlapped.hEvent);
             continue;
         }
+
+        CloseHandle(m_overlapped.hEvent);
 
         bool matched = false;
         auto* info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer.data());

@@ -62,22 +62,9 @@ App::App(HINSTANCE hInstance) :
 
 App::~App()
 {
-    if (m_hooks)
-    {
-        m_hooks->Stop();
-    }
-    m_dragController.reset();
-    if (m_fileWatcher)
-    {
-        m_fileWatcher->Stop();
-    }
-    if (m_editor)
-    {
-        m_editor->Close();
-    }
     if (m_hwnd)
     {
-        DestroyWindow(m_hwnd);
+        Exit();
     }
 }
 
@@ -104,7 +91,7 @@ bool App::Init()
     m_tray.SetOnEditLayouts([this] { OpenLayoutEditor(); });
     m_tray.SetOnReloadConfig([this] { ReloadConfig(); });
     m_tray.SetOnOpenFolder([this] { OpenConfigFolder(); });
-    m_tray.SetOnExit([this] { SendMessageW(m_hwnd, WM_CLOSE, 0, 0); });
+    m_tray.SetOnExit([this] { Exit(); });
 
     if (!m_tray.AddIcon(m_hwnd, m_hInstance))
     {
@@ -246,6 +233,27 @@ void App::OpenConfigFolder()
 {
     const std::wstring dir = Paths::ConfigDir();
     ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+void App::Exit()
+{
+    KillTimer(m_hwnd, kFlushTimerId);
+    AppZoneHistory::instance().FlushIfDirty();
+    if (m_hooks)
+    {
+        m_hooks->Stop();
+    }
+    if (m_fileWatcher)
+    {
+        m_fileWatcher->Stop();
+    }
+    if (m_editor)
+    {
+        m_editor->Close();
+    }
+    m_tray.RemoveIcon();
+    m_hwnd = nullptr;
+    ExitProcess(0);
 }
 
 void App::HandleMoveSizeStart(HWND window)
@@ -433,12 +441,17 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         KillTimer(m_hwnd, kFlushTimerId);
         AppZoneHistory::instance().FlushIfDirty();
+        if (m_hooks)
+        {
+            m_hooks->Stop();
+        }
         m_tray.RemoveIcon();
-        PostQuitMessage(0);
+        m_hwnd = nullptr;
+        ExitProcess(0);
         return 0;
 
     case WM_CLOSE:
-        DestroyWindow(hwnd);
+        Exit();
         return 0;
 
     default:

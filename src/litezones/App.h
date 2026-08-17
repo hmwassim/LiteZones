@@ -41,6 +41,7 @@ private:
     void HandleWindowDestroyed(HWND window);
     void HandleSnapHotkey(DWORD vkCode);
     void HandleWindowCreated(HWND window);
+    void Exit();
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
