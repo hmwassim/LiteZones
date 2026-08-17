@@ -50,6 +50,8 @@ private:
         kBtnDuplicate = 5004,
         kBtnDelete = 5005,
         kBtnRename = 5006,
+        kBtnApply = 5007,
+        kBtnApplyAll = 5008,
         kEditSpacing = 5009,
         kEditZoneCount = 5010,
     };
@@ -69,6 +71,8 @@ private:
     void UpdateZoneCountControl();
     void OnZoneCountChanged();
     void UpdateHint();
+    void UpdateApplyButtons();
+    void UpdateUndoState();
     void NotifyChanged();
 
     void OnNewLayout();
@@ -102,6 +106,8 @@ private:
     HWND m_zoneCountEdit = nullptr;
     HWND m_staticHint = nullptr;
     HWND m_canvas = nullptr;
+    HWND m_btnApply = nullptr;
+    HWND m_btnApplyAll = nullptr;
     int m_spacingValue = DefaultValues::Spacing;
     int m_zoneCountValue = DefaultValues::ZoneCount;
     std::vector<ListEntry> m_entries;

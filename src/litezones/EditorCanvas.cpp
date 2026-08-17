@@ -137,6 +137,7 @@ namespace
         const float scale = ComputeScale(view, view.clientWidth, view.clientHeight);
         const int threshold = std::max(1, static_cast<int>(std::lround(kResizerHitThreshold / std::max(scale, 0.01f))));
         const auto& resizers = view.grid->Resizers();
+        const auto& zones = view.grid->Zones();
         for (size_t i = 0; i < resizers.size(); ++i)
         {
             const int position = view.grid->ResizerPosition(static_cast<int>(i));
@@ -150,7 +151,41 @@ namespace
                                          : position * view.virtualWidth / GridData::Multiplier;
             const int mouse = horizontal ? virtualPt.y : virtualPt.x;
             const int distance = std::abs(mouse - axisPosition);
-            if (distance < bestDistance)
+            if (distance > bestDistance)
+            {
+                continue;
+            }
+
+            const auto& sideIndices = resizers[i].negativeSideIndices;
+            if (sideIndices.empty())
+            {
+                bestDistance = distance;
+                best = static_cast<int>(i);
+                continue;
+            }
+
+            int extentMin = std::numeric_limits<int>::max();
+            int extentMax = std::numeric_limits<int>::min();
+            for (int idx : sideIndices)
+            {
+                if (idx < 0 || idx >= static_cast<int>(zones.size()))
+                {
+                    continue;
+                }
+                const auto& z = zones[static_cast<size_t>(idx)];
+                if (horizontal)
+                {
+                    extentMin = std::min(extentMin, z.left);
+                    extentMax = std::max(extentMax, z.right);
+                }
+                else
+                {
+                    extentMin = std::min(extentMin, z.top);
+                    extentMax = std::max(extentMax, z.bottom);
+                }
+            }
+            const int perpCoord = horizontal ? virtualPt.x : virtualPt.y;
+            if (perpCoord >= extentMin && perpCoord <= extentMax)
             {
                 bestDistance = distance;
                 best = static_cast<int>(i);

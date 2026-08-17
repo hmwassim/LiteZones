@@ -25,7 +25,7 @@ namespace
     constexpr int kEditorInitialHeight = 620;
     constexpr int kMaxZoneCount = 16;
     constexpr int kMaxSpacing = 100;
-    constexpr int kMinTrackWidth = 700;
+    constexpr int kMinTrackWidth = 820;
     constexpr int kMinTrackHeight = 480;
 
     struct NewLayoutResult
@@ -267,8 +267,13 @@ bool EditorWindow::CreateControls()
         createButton(kBtnRename, L"Rename..."),
     };
 
+    m_btnApply = CreateWindowExW(0, L"BUTTON", L"Apply", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                                  0, 0, 0, 0, m_hwnd, reinterpret_cast<HMENU>(kBtnApply), m_hInstance, nullptr);
+    m_btnApplyAll = CreateWindowExW(0, L"BUTTON", L"Apply All", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                                    0, 0, 0, 0, m_hwnd, reinterpret_cast<HMENU>(kBtnApplyAll), m_hInstance, nullptr);
+
     for (HWND control : { m_listBox, m_staticMonitor, m_monitorCombo, m_staticSpacing, m_spacingEdit,
-                          m_staticZones, m_zoneCountEdit, m_staticHint, m_canvas })
+                          m_staticZones, m_zoneCountEdit, m_staticHint, m_canvas, m_btnApply, m_btnApplyAll })
     {
         SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
     }
@@ -299,6 +304,8 @@ void EditorWindow::LayoutControls()
     MoveWindow(m_spacingEdit, kLeftPanelWidth + 296, 10, 44, 24, TRUE);
     MoveWindow(m_staticZones, kLeftPanelWidth + 348, 13, 40, 16, TRUE);
     MoveWindow(m_zoneCountEdit, kLeftPanelWidth + 390, 10, 40, 24, TRUE);
+    MoveWindow(m_btnApply, kLeftPanelWidth + 438, 10, 56, 24, TRUE);
+    MoveWindow(m_btnApplyAll, kLeftPanelWidth + 500, 10, 72, 24, TRUE);
 
     const int buttonWidth = (kLeftPanelWidth - 16 - 8) / 2;
     MoveWindow(GetDlgItem(m_hwnd, kBtnNew), 8, height - 60, buttonWidth, 24, TRUE);
@@ -446,6 +453,8 @@ void EditorWindow::OnSelectionChanged()
     UpdateHint();
 
     UpdateCanvasPreview();
+    UpdateApplyButtons();
+    UpdateUndoState();
 }
 
 void EditorWindow::UpdateCanvasPreview()
@@ -560,6 +569,7 @@ void EditorWindow::OnSpacingChanged()
     }
 
     UpdateCanvasPreview();
+    UpdateApplyButtons();
 }
 
 void EditorWindow::UpdateZoneCountControl()
@@ -604,6 +614,7 @@ void EditorWindow::OnZoneCountChanged()
     m_zoneCountValue = value;
 
     UpdateCanvasPreview();
+    UpdateApplyButtons();
 }
 
 void EditorWindow::UpdateHint()
@@ -652,6 +663,48 @@ void EditorWindow::NotifyChanged()
     if (m_onChanged)
     {
         m_onChanged();
+    }
+}
+
+void EditorWindow::UpdateApplyButtons()
+{
+    const int listIndex = SelectedListIndex();
+    LayoutData desired{};
+    const bool hasLayout = BuildApplyLayout(listIndex, desired);
+
+    bool canApply = false;
+    bool canApplyAll = false;
+    if (hasLayout)
+    {
+        const int comboIndex = static_cast<int>(SendMessageW(m_monitorCombo, CB_GETCURSEL, 0, 0));
+        if (comboIndex >= 0 && comboIndex < static_cast<int>(m_deviceKeys.size()))
+        {
+            const auto applied = AppliedLayouts::instance().GetDeviceLayout(m_deviceKeys[static_cast<size_t>(comboIndex)]);
+            canApply = !applied.has_value() || !(*applied == desired);
+        }
+
+        canApplyAll = true;
+        for (const auto& deviceKey : m_deviceKeys)
+        {
+            const auto applied = AppliedLayouts::instance().GetDeviceLayout(deviceKey);
+            if (applied.has_value() && *applied == desired)
+            {
+                canApplyAll = false;
+                break;
+            }
+        }
+    }
+
+    EnableWindow(m_btnApply, canApply ? TRUE : FALSE);
+    EnableWindow(m_btnApplyAll, canApplyAll ? TRUE : FALSE);
+}
+
+void EditorWindow::UpdateUndoState()
+{
+    if (m_menuEdit)
+    {
+        EnableMenuItem(m_menuEdit, IDM_EDIT_UNDO,
+                       MF_BYCOMMAND | (m_undoStack.empty() ? MF_GRAYED : MF_ENABLED));
     }
 }
 
@@ -922,6 +975,7 @@ void EditorWindow::OnApply()
     AppliedLayouts::instance().ApplyLayout(m_deviceKeys[static_cast<size_t>(comboIndex)], layout);
     AppliedLayouts::instance().SaveData();
     NotifyChanged();
+    UpdateApplyButtons();
 }
 
 void EditorWindow::OnApplyAll()
@@ -947,15 +1001,13 @@ void EditorWindow::OnApplyAll()
     }
     AppliedLayouts::instance().SaveData();
     NotifyChanged();
+    UpdateApplyButtons();
 }
 
 void EditorWindow::CreateMenuBar()
 {
     m_menuFile = CreateMenu();
     AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_SAVE, L"&Save\tCtrl+S");
-    AppendMenuW(m_menuFile, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_APPLY, L"Apply &to Monitor\tCtrl+Enter");
-    AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_APPLYALL, L"Apply to &All Monitors\tCtrl+Shift+Enter");
     AppendMenuW(m_menuFile, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(m_menuFile, MF_STRING, IDM_FILE_CLOSE, L"&Close\tAlt+F4");
 
@@ -985,6 +1037,7 @@ void EditorWindow::OnSave()
     }
     PersistAllWorkingCopies();
     NotifyChanged();
+    UpdateApplyButtons();
 }
 
 void EditorWindow::OnUndo()
@@ -1010,6 +1063,7 @@ void EditorWindow::OnUndo()
         }
     }
     NotifyChanged();
+    UpdateUndoState();
 }
 
 void EditorWindow::OnAbout()
@@ -1156,6 +1210,7 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             if (HIWORD(wParam) == CBN_SELCHANGE)
             {
                 UpdateCanvasPreview();
+                UpdateApplyButtons();
             }
             return 0;
         case kBtnNew:
@@ -1169,6 +1224,12 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             return 0;
         case kBtnRename:
             OnRename();
+            return 0;
+        case kBtnApply:
+            OnApply();
+            return 0;
+        case kBtnApplyAll:
+            OnApplyAll();
             return 0;
         case kEditSpacing:
             if (HIWORD(wParam) == EN_CHANGE)
