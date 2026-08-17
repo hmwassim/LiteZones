@@ -249,6 +249,15 @@ void WorkArea::HideZones()
     }
 }
 
+void WorkArea::PreWarm()
+{
+    EnsureWindow();
+    if (m_overlay)
+    {
+        m_overlay->PreWarm();
+    }
+}
+
 void WorkArea::SetWorkAreaWindowAsTopmost(HWND draggedWindow)
 {
     if (!m_window)

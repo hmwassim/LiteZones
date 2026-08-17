@@ -37,6 +37,7 @@ public:
 
     void ShowZones(const ZoneIndexSet& highlightZones);
     void HideZones();
+    void PreWarm();
 
     ZoneAssignmentStore* AssignmentStore() { return &m_assignments; }
 

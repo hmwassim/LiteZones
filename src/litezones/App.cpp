@@ -81,6 +81,11 @@ bool App::Init()
     AppliedLayouts::instance().LoadData();
     ReloadWorkAreas();
 
+    for (auto& wa : m_workAreaManager.WorkAreas())
+    {
+        wa.PreWarm();
+    }
+
     if (!CreateHiddenWindow())
     {
         return false;

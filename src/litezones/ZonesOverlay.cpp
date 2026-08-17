@@ -152,6 +152,11 @@ void ZonesOverlay::Hide()
     ShowWindow(m_window, SW_HIDE);
 }
 
+bool ZonesOverlay::PreWarm()
+{
+    return EnsureResources();
+}
+
 void ZonesOverlay::Render()
 {
     if (!EnsureResources())

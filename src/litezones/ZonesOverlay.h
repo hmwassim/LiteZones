@@ -24,6 +24,7 @@ public:
     void DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& highlightZones, const Colors::ZoneColors& colors, bool showZoneText);
     void Show();
     void Hide();
+    bool PreWarm();
 
 private:
     struct DrawableRect
