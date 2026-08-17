@@ -43,9 +43,6 @@ public:
 
     void SetOverlappingAlgorithm(const std::wstring& algorithm) { m_overlappingAlgorithm = algorithm; }
 
-    GUID Id() const noexcept;
-    FancyZonesDataTypes::ZoneSetLayoutType Type() const noexcept;
-
     const ZonesMap& Zones() const noexcept;
     ZoneIndexSet ZonesFromPoint(POINT pt) const noexcept;
     // Returns all zones spanned by the minimum bounding rectangle containing the two given zone index sets.

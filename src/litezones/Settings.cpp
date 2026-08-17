@@ -11,11 +11,8 @@ namespace
     const std::wstring kKeyMouseSwitch = L"mouseSwitch";
     const std::wstring kKeyMouseMiddleClickSpanningMultipleZones = L"mouseMiddleClickSpanningMultipleZones";
     const std::wstring kKeyMoveWindowAcrossMonitors = L"moveWindowAcrossMonitors";
-    const std::wstring kKeyMoveWindowsBasedOnPosition = L"moveWindowsBasedOnPosition";
     const std::wstring kKeySnapToAppZoneOnOpen = L"snapToAppZoneOnOpen";
-    const std::wstring kKeyOverrideSnapHotkeys = L"overrideSnapHotkeys";
     const std::wstring kKeyRestoreSize = L"restoreSize";
-    const std::wstring kKeyOpenWindowOnActiveMonitor = L"openWindowOnActiveMonitor";
     const std::wstring kKeySpanZonesAcrossMonitors = L"spanZonesAcrossMonitors";
     const std::wstring kKeyMakeDraggedWindowTransparent = L"makeDraggedWindowTransparent";
     const std::wstring kKeyShowZoneNumber = L"showZoneNumber";
@@ -49,7 +46,6 @@ void Settings::Load()
     {
         // First run: write defaults so the user has a reference file.
         Save();
-        m_loaded = true;
         return;
     }
 
@@ -74,11 +70,8 @@ void Settings::Load()
         fresh.mouseSwitch = root.At(kKeyMouseSwitch).AsBool(fresh.mouseSwitch);
         fresh.mouseMiddleClickSpanningMultipleZones = root.At(kKeyMouseMiddleClickSpanningMultipleZones).AsBool(fresh.mouseMiddleClickSpanningMultipleZones);
         fresh.moveWindowAcrossMonitors = root.At(kKeyMoveWindowAcrossMonitors).AsBool(fresh.moveWindowAcrossMonitors);
-        fresh.moveWindowsBasedOnPosition = root.At(kKeyMoveWindowsBasedOnPosition).AsBool(fresh.moveWindowsBasedOnPosition);
         fresh.snapToAppZoneOnOpen = root.At(kKeySnapToAppZoneOnOpen).AsBool(fresh.snapToAppZoneOnOpen);
-        fresh.overrideSnapHotkeys = root.At(kKeyOverrideSnapHotkeys).AsBool(fresh.overrideSnapHotkeys);
         fresh.restoreSize = root.At(kKeyRestoreSize).AsBool(fresh.restoreSize);
-        fresh.openWindowOnActiveMonitor = root.At(kKeyOpenWindowOnActiveMonitor).AsBool(fresh.openWindowOnActiveMonitor);
         fresh.spanZonesAcrossMonitors = root.At(kKeySpanZonesAcrossMonitors).AsBool(fresh.spanZonesAcrossMonitors);
         fresh.makeDraggedWindowTransparent = root.At(kKeyMakeDraggedWindowTransparent).AsBool(fresh.makeDraggedWindowTransparent);
         fresh.showZoneNumber = root.At(kKeyShowZoneNumber).AsBool(fresh.showZoneNumber);
@@ -106,7 +99,6 @@ void Settings::Load()
     }
 
     data = std::move(fresh);
-    m_loaded = true;
 }
 
 void Settings::Save() const
@@ -121,11 +113,8 @@ void Settings::Save() const
     root.Set(kKeyMouseSwitch, data.mouseSwitch);
     root.Set(kKeyMouseMiddleClickSpanningMultipleZones, data.mouseMiddleClickSpanningMultipleZones);
     root.Set(kKeyMoveWindowAcrossMonitors, data.moveWindowAcrossMonitors);
-    root.Set(kKeyMoveWindowsBasedOnPosition, data.moveWindowsBasedOnPosition);
     root.Set(kKeySnapToAppZoneOnOpen, data.snapToAppZoneOnOpen);
-    root.Set(kKeyOverrideSnapHotkeys, data.overrideSnapHotkeys);
     root.Set(kKeyRestoreSize, data.restoreSize);
-    root.Set(kKeyOpenWindowOnActiveMonitor, data.openWindowOnActiveMonitor);
     root.Set(kKeySpanZonesAcrossMonitors, data.spanZonesAcrossMonitors);
     root.Set(kKeyMakeDraggedWindowTransparent, data.makeDraggedWindowTransparent);
     root.Set(kKeyShowZoneNumber, data.showZoneNumber);
@@ -144,9 +133,4 @@ void Settings::Save() const
     root.Set(kKeyExcludedApps, apps);
 
     Paths::WriteTextFile(Paths::SettingsFile(), root.SerializeIndented(), /*crlf=*/true);
-}
-
-bool Settings::loaded() const
-{
-    return m_loaded;
 }

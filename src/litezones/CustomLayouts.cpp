@@ -363,11 +363,6 @@ void CustomLayouts::SaveData() const
     Paths::WriteTextFile(FilePath(), root.SerializeIndented(), /*crlf=*/false);
 }
 
-bool CustomLayouts::HasLayout(const GUID& uuid) const
-{
-    return m_layouts.find(uuid) != m_layouts.end();
-}
-
 std::optional<LayoutData> CustomLayouts::GetLayout(const GUID& uuid) const
 {
     const auto it = m_layouts.find(uuid);

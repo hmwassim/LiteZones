@@ -6,7 +6,6 @@
 #include "DragController.h"
 #include "EditorWindow.h"
 #include "FileWatcher.h"
-#include "KeyboardSnap.h"
 #include "LayoutHelpers.h"
 #include "MonitorManager.h"
 #include "Paths.h"
@@ -104,7 +103,6 @@ bool App::Init()
     }
 
     m_dragController = std::make_unique<DragController>(m_workAreaManager, Settings::instance().data);
-    m_keyboardSnap = std::make_unique<KeyboardSnap>(m_workAreaManager, Settings::instance().data);
     m_hooks = std::make_unique<Hooks>(m_hwnd, Settings::instance().data);
     if (!m_hooks->Start())
     {
@@ -160,10 +158,6 @@ void App::ToggleSnapping()
     if (!m_snappingEnabled && m_dragController)
     {
         m_dragController->MoveSizeEnd();
-    }
-    if (m_hooks)
-    {
-        m_hooks->SetSnappingEnabled(m_snappingEnabled);
     }
     m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
 }
@@ -311,21 +305,6 @@ void App::HandleWindowDestroyed(HWND window)
     }
 }
 
-void App::HandleSnapHotkey(DWORD vkCode)
-{
-    if (!m_snappingEnabled || !m_keyboardSnap)
-    {
-        return;
-    }
-
-    if (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9)
-    {
-        vkCode = static_cast<DWORD>('0') + (vkCode - VK_NUMPAD0);
-    }
-
-    m_keyboardSnap->HandleKey(GetForegroundWindow(), vkCode);
-}
-
 void App::HandleWindowCreated(HWND window)
 {
     if (!m_snappingEnabled)
@@ -433,10 +412,6 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             m_dragController->OnMouseButtonChanged(static_cast<UINT>(wParam), lParam != 0);
         }
-        return 0;
-
-    case WM_PRIV_SNAP_HOTKEY:
-        HandleSnapHotkey(static_cast<DWORD>(wParam));
         return 0;
 
     case WM_PRIV_WINDOWCREATED:

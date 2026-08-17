@@ -12,8 +12,6 @@
 class DragController;
 class EditorWindow;
 class FileWatcher;
-class KeyboardSnap;
-
 class App
 {
 public:
@@ -39,7 +37,6 @@ private:
     void HandleMoveSizeEnd();
     void HandleMoveSizeUpdate();
     void HandleWindowDestroyed(HWND window);
-    void HandleSnapHotkey(DWORD vkCode);
     void HandleWindowCreated(HWND window);
     void Exit();
 
@@ -49,7 +46,6 @@ private:
 
     std::unique_ptr<FileWatcher> m_fileWatcher;
     std::unique_ptr<DragController> m_dragController;
-    std::unique_ptr<KeyboardSnap> m_keyboardSnap;
     std::unique_ptr<Hooks> m_hooks;
     std::unique_ptr<EditorWindow> m_editor;
     WorkAreaManager m_workAreaManager;

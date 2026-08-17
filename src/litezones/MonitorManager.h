@@ -28,7 +28,6 @@ namespace MonitorUtils
 
     // Deterministic ordering: left-to-right, top-to-bottom (FancyZones OrderMonitors).
     void OrderMonitors(std::vector<MonitorRect>& monitorInfo);
-    std::vector<HMONITOR> GetMonitorsOrdered();
 
     // Bounding box of all given monitor rects (empty input -> {0,0,0,0}).
     RECT GetMonitorsCombinedRect(const std::vector<MonitorRect>& monitorRects);

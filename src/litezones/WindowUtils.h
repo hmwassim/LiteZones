@@ -16,7 +16,6 @@ namespace WindowUtils
     // Stores the window's current size and origin as window properties (once).
     void SaveWindowSizeAndOrigin(HWND window) noexcept;
     void RestoreWindowSize(HWND window) noexcept;
-    void RestoreWindowOrigin(HWND window) noexcept;
 
     // Moves/resizes a window so its client area matches the given screen-space rect.
     void SizeWindowToRect(HWND window, RECT rect, BOOL snapZone) noexcept;

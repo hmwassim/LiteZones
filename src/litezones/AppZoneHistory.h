@@ -20,9 +20,6 @@ public:
     // Writes the current history to disk. Safe to call repeatedly.
     void SaveData() const;
 
-    void Clear();
-
-    ZoneIndexSet GetAppLastZoneIndexSet(const std::wstring& processPath) const;
     bool SetAppLastZones(const std::wstring& processPath, const ZoneIndexSet& zones);
     void RemoveAppLastZone(const std::wstring& processPath);
 

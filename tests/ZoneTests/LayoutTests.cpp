@@ -3,8 +3,6 @@
 void TestLayoutBasics()
 {
     auto layout = std::make_unique<Layout>(kGridLayoutData);
-    CHECK(layout->Id() == kLayoutGuid);
-    CHECK(layout->Type() == ZoneSetLayoutType::Grid);
 
     CHECK(layout->Zones().empty());
     CHECK(layout->ZonesFromPoint(POINT{ 0, 0 }).empty());

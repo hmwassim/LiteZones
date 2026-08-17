@@ -101,7 +101,6 @@
     <ClCompile Include="HighlightedZones.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="json.cpp" />
-    <ClCompile Include="KeyboardSnap.cpp" />
     <ClCompile Include="LayoutAssignedWindows.cpp" />
     <ClCompile Include="LayoutEngine.cpp" />
     <ClCompile Include="main.cpp" />
@@ -110,7 +109,6 @@
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="TrayService.cpp" />
     <ClCompile Include="GuidUtils.cpp" />
-    <ClCompile Include="ZoneNavigation.cpp" />
     <ClCompile Include="WindowProcessing.cpp" />
     <ClCompile Include="WindowProperties.cpp" />
     <ClCompile Include="WindowUtils.cpp" />
@@ -135,7 +133,6 @@
     <ClInclude Include="HighlightedZones.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="json.h" />
-    <ClInclude Include="KeyboardSnap.h" />
     <ClInclude Include="LayoutAssignedWindows.h" />
     <ClInclude Include="LayoutEngine.h" />
     <ClInclude Include="LayoutHelpers.h" />
@@ -146,7 +143,6 @@
     <ClInclude Include="Settings.h" />
     <ClInclude Include="TrayService.h" />
     <ClInclude Include="GuidUtils.h" />
-    <ClInclude Include="ZoneNavigation.h" />
     <ClInclude Include="WindowProcessing.h" />
     <ClInclude Include="WindowProperties.h" />
     <ClInclude Include="WindowUtils.h" />

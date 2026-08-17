@@ -145,23 +145,3 @@ const WorkArea* WorkAreaManager::WorkAreaContainingPoint(POINT pt) const
     auto it = std::find_if(m_workAreas.begin(), m_workAreas.end(), [&](const WorkArea& wa) { return RectContains(wa.WorkAreaRect(), pt); });
     return it == m_workAreas.end() ? nullptr : &(*it);
 }
-
-WorkArea* WorkAreaManager::WorkAreaContainingPointWithFallback(POINT pt)
-{
-    if (WorkArea* wa = WorkAreaContainingPoint(pt))
-    {
-        return wa;
-    }
-    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
-    return WorkAreaFor(primary);
-}
-
-const WorkArea* WorkAreaManager::WorkAreaContainingPointWithFallback(POINT pt) const
-{
-    if (const WorkArea* wa = WorkAreaContainingPoint(pt))
-    {
-        return wa;
-    }
-    const HMONITOR primary = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
-    return WorkAreaFor(primary);
-}

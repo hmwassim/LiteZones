@@ -12,7 +12,8 @@ void TestAppZoneHistoryStore()
     const std::wstring testFile = Paths::ConfigDir() + L"\\test-app-zone-history.json";
     AppZoneHistory& history = AppZoneHistory::instance();
     history.SetPathOverride(testFile);
-    history.Clear();
+    history.RemoveAppLastZone(L"C:\\apps\\alpha.exe");
+    history.RemoveAppLastZone(L"C:\\apps\\beta.exe");
 
     const std::wstring appA = L"C:\\apps\\alpha.exe";
     const std::wstring appB = L"C:\\apps\\beta.exe";
@@ -20,16 +21,17 @@ void TestAppZoneHistoryStore()
     const ZoneIndexSet zonesB{ 3 };
     CHECK(history.SetAppLastZones(appA, zonesA));
     CHECK(history.SetAppLastZones(appB, zonesB));
-    CHECK(history.GetAppLastZoneIndexSet(appA) == zonesA);
-    CHECK(history.GetAppLastZoneIndexSet(appB) == zonesB);
+    CHECK(history.History().at(appA) == zonesA);
+    CHECK(history.History().at(appB) == zonesB);
 
     // Round-trip: reload from disk and verify the entries survived.
     history.LoadData();
-    CHECK(history.GetAppLastZoneIndexSet(appA) == zonesA);
-    CHECK(history.GetAppLastZoneIndexSet(appB) == zonesB);
+    CHECK(history.History().at(appA) == zonesA);
+    CHECK(history.History().at(appB) == zonesB);
 
-    history.Clear();
-    CHECK(history.GetAppLastZoneIndexSet(appA).empty());
+    history.RemoveAppLastZone(appA);
+    history.RemoveAppLastZone(appB);
+    CHECK(history.History().find(appA) == history.History().end());
 
     DeleteFileW(testFile.c_str());
     history.SetPathOverride(L"");
@@ -70,7 +72,7 @@ void TestCustomLayoutsStore()
     grid.grid.m_spacing = 17;
     grid.grid.m_sensitivityRadius = 25;
     CHECK(store.AddLayout(gridGuid, grid));
-    CHECK(store.HasLayout(gridGuid));
+    CHECK(store.GetLayout(gridGuid).has_value());
 
     auto layout = store.GetLayout(gridGuid);
     CHECK(layout.has_value());
@@ -97,8 +99,8 @@ void TestCustomLayoutsStore()
 
     // Round-trip from disk.
     store.LoadData();
-    CHECK(store.HasLayout(gridGuid));
-    CHECK(store.HasLayout(canvasGuid));
+    CHECK(store.GetLayout(gridGuid).has_value());
+    CHECK(store.GetLayout(canvasGuid).has_value());
     auto gridReloaded = store.GetLayout(gridGuid);
     CHECK(gridReloaded.has_value());
     if (gridReloaded.has_value())
@@ -121,10 +123,10 @@ void TestCustomLayoutsStore()
     }
 
     store.DeleteLayout(gridGuid);
-    CHECK(!store.HasLayout(gridGuid));
-    CHECK(store.HasLayout(canvasGuid));
+    CHECK(!store.GetLayout(gridGuid).has_value());
+    CHECK(store.GetLayout(canvasGuid).has_value());
     store.DeleteLayout(canvasGuid);
-    CHECK(!store.HasLayout(canvasGuid));
+    CHECK(!store.GetLayout(canvasGuid).has_value());
 
     DeleteFileW(testFile.c_str());
     store.SetPathOverride(L"");
@@ -161,7 +163,7 @@ void TestCustomLayoutsPercentScaling()
     store.LoadData();
 
     const GUID uuid = { 0x00000000, 0x0000, 0x0000, { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1 } };
-    CHECK(store.HasLayout(uuid));
+    CHECK(store.GetLayout(uuid).has_value());
     const auto* data = store.GetCustomLayoutData(uuid);
     CHECK(data != nullptr);
     if (data)
@@ -227,9 +229,6 @@ void TestAppliedLayoutsStore()
         CHECK(b->type == ZoneSetLayoutType::PriorityGrid);
     }
     CHECK(!store.GetDeviceLayout(L"nonexistent").has_value());
-
-    store.ClearDeviceLayout(keyA);
-    CHECK(!store.GetDeviceLayout(keyA).has_value());
 
     DeleteFileW(testFile.c_str());
     store.SetPathOverride(L"");

@@ -25,7 +25,6 @@ public:
 
     std::optional<LayoutData> GetDeviceLayout(const std::wstring& deviceKey) const;
     void ApplyLayout(const std::wstring& deviceKey, const LayoutData& layout);
-    void ClearDeviceLayout(const std::wstring& deviceKey);
 
     const AppliedLayoutMap& AllLayouts() const { return m_layouts; }
 

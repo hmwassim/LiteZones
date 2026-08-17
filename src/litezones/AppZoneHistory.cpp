@@ -94,21 +94,6 @@ void AppZoneHistory::SaveData() const
     Paths::WriteTextFile(FilePath(), root.SerializeIndented(), /*crlf=*/false);
 }
 
-void AppZoneHistory::Clear()
-{
-    m_history.clear();
-}
-
-ZoneIndexSet AppZoneHistory::GetAppLastZoneIndexSet(const std::wstring& processPath) const
-{
-    const auto it = m_history.find(processPath);
-    if (it == m_history.end())
-    {
-        return {};
-    }
-    return it->second;
-}
-
 bool AppZoneHistory::SetAppLastZones(const std::wstring& processPath, const ZoneIndexSet& zones)
 {
     if (processPath.empty() || zones.empty())

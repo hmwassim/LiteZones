@@ -1,7 +1,6 @@
 #include "Hooks.h"
 
 #include "Settings.h"
-#include "WindowProcessing.h"
 
 Hooks::Hooks(HWND targetWindow, const SettingsData& settings) :
     m_targetWindow(targetWindow)
@@ -100,40 +99,6 @@ void Hooks::DisableLocationChangeTracking()
     }
 }
 
-void Hooks::SetSnappingEnabled(bool enabled)
-{
-    s_snappingEnabled = enabled;
-}
-
-bool Hooks::IsSnapHotkeyKey(DWORD vkCode)
-{
-    if ((vkCode >= '0' && vkCode <= '9') || (vkCode >= VK_NUMPAD0 && vkCode <= VK_NUMPAD9))
-    {
-        return true;
-    }
-    return vkCode == VK_LEFT || vkCode == VK_RIGHT || vkCode == VK_UP || vkCode == VK_DOWN;
-}
-
-bool Hooks::IsSnapHotkeyComboHeld()
-{
-    const bool winPressed = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
-    if (!winPressed)
-    {
-        return false;
-    }
-
-    const bool ctrlPressed = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-    const bool altPressed = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-    const bool shiftPressed = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
-
-    // Win+Ctrl+Alt+key, or Win+key when overriding the system snap hotkeys.
-    if (ctrlPressed && altPressed && !shiftPressed)
-    {
-        return true;
-    }
-    return s_settings->overrideSnapHotkeys && !ctrlPressed && !altPressed && !shiftPressed;
-}
-
 LRESULT CALLBACK Hooks::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HC_ACTION)
@@ -156,24 +121,6 @@ LRESULT CALLBACK Hooks::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lP
         {
             const bool pressed = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
             PostMessageW(s_targetWindow, WM_PRIV_KEYSTATE, vkCode, pressed ? 1 : 0);
-        }
-
-        if (s_snappingEnabled && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN))
-        {
-            if (IsSnapHotkeyKey(info->vkCode) && IsSnapHotkeyComboHeld())
-            {
-                // Up/Down only make sense when navigating by position.
-                if ((info->vkCode == VK_UP || info->vkCode == VK_DOWN) && !s_settings->moveWindowsBasedOnPosition)
-                {
-                    return CallNextHookEx(nullptr, nCode, wParam, lParam);
-                }
-
-                if (WindowProcessing::IsProcessableManually(GetForegroundWindow(), *s_settings))
-                {
-                    PostMessageW(s_targetWindow, WM_PRIV_SNAP_HOTKEY, info->vkCode, 0);
-                    return 1;
-                }
-            }
         }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
@@ -234,5 +181,4 @@ void CALLBACK Hooks::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LO
 }
 
 HWND Hooks::s_targetWindow = nullptr;
-bool Hooks::s_snappingEnabled = true;
 const SettingsData* Hooks::s_settings = nullptr;

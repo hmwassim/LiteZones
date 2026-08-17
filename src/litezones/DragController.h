@@ -27,7 +27,6 @@ public:
     void OnKeyStateChanged(UINT vk, bool pressed);
     void OnMouseButtonChanged(UINT button, bool down);
 
-    HWND DraggedWindow() const { return m_draggingWindow; }
     bool IsDragging() const { return m_draggingWindow != nullptr; }
 
 private:

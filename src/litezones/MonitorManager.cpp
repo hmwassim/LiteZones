@@ -116,19 +116,6 @@ namespace MonitorUtils
         monitorInfo = std::move(sortedMonitorInfo);
     }
 
-    std::vector<HMONITOR> GetMonitorsOrdered()
-    {
-        auto monitors = GetAllMonitorWorkRects();
-        OrderMonitors(monitors);
-        std::vector<HMONITOR> output;
-        output.reserve(monitors.size());
-        for (const auto& info : monitors)
-        {
-            output.push_back(info.first);
-        }
-        return output;
-    }
-
     RECT GetMonitorsCombinedRect(const std::vector<MonitorRect>& monitorRects)
     {
         bool empty = true;

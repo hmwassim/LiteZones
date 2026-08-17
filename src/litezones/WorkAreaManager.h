@@ -33,9 +33,6 @@ public:
     WorkArea* WorkAreaContainingPoint(POINT pt);
     const WorkArea* WorkAreaContainingPoint(POINT pt) const;
 
-    WorkArea* WorkAreaContainingPointWithFallback(POINT pt);
-    const WorkArea* WorkAreaContainingPointWithFallback(POINT pt) const;
-
 private:
     HINSTANCE m_hInstance = nullptr;
     const SettingsData& m_settings;

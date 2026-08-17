@@ -185,8 +185,3 @@ void AppliedLayouts::ApplyLayout(const std::wstring& deviceKey, const LayoutData
 {
     m_layouts[deviceKey] = layout;
 }
-
-void AppliedLayouts::ClearDeviceLayout(const std::wstring& deviceKey)
-{
-    m_layouts.erase(deviceKey);
-}

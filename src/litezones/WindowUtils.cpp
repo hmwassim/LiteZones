@@ -241,29 +241,6 @@ namespace WindowUtils
         RemovePropW(window, ZonedWindowProperties::PropertyRestoreSizeID);
     }
 
-    void RestoreWindowOrigin(HWND window) noexcept
-    {
-        int origin[2]{};
-        if (!GetPropData(window, ZonedWindowProperties::PropertyRestoreOriginID, origin, sizeof(origin)))
-        {
-            return;
-        }
-
-        RECT rect{};
-        if (GetWindowRect(window, &rect))
-        {
-            const int xOffset = origin[0] - rect.left;
-            const int yOffset = origin[1] - rect.top;
-            rect.left += xOffset;
-            rect.right += xOffset;
-            rect.top += yOffset;
-            rect.bottom += yOffset;
-            SizeWindowToRect(window, rect, FALSE);
-        }
-
-        RemovePropW(window, ZonedWindowProperties::PropertyRestoreOriginID);
-    }
-
     RECT AdjustRectForSizeWindowToRect(HWND window, RECT rect, HWND windowOfRect) noexcept
     {
         RECT newWindowRect = rect;

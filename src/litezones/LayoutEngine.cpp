@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <complex>
+#include <iterator>
 #include <map>
 
 using std::min;
@@ -542,16 +542,6 @@ bool Layout::Init(const RECT& workArea, HMONITOR monitor) noexcept
     }
 
     return m_zones.size() == static_cast<size_t>(m_data.zoneCount);
-}
-
-GUID Layout::Id() const noexcept
-{
-    return m_data.uuid;
-}
-
-FancyZonesDataTypes::ZoneSetLayoutType Layout::Type() const noexcept
-{
-    return m_data.type;
 }
 
 const ZonesMap& Layout::Zones() const noexcept

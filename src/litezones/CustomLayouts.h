@@ -25,7 +25,6 @@ public:
     // Writes the current map to disk. Safe to call repeatedly.
     void SaveData() const;
 
-    bool HasLayout(const GUID& uuid) const;
     // LayoutData for applying a custom layout (re-derives zoneCount/spacing/etc.
     // from the stored data). Returns std::nullopt when the uuid is unknown.
     std::optional<LayoutData> GetLayout(const GUID& uuid) const;
