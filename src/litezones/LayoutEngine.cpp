@@ -32,7 +32,18 @@ LiteZonesTypes::GridLayoutInfo::GridLayoutInfo(int rows, int columns) :
 
 int LiteZonesTypes::GridLayoutInfo::zoneCount() const
 {
-    return m_cellChildMap.empty() ? 0 : (m_cellChildMap.back().empty() ? 0 : m_cellChildMap.back().back() + 1);
+    int maxChild = -1;
+    for (const auto& row : m_cellChildMap)
+    {
+        for (int cell : row)
+        {
+            if (cell > maxChild)
+            {
+                maxChild = cell;
+            }
+        }
+    }
+    return maxChild + 1;
 }
 
 bool AddZone(Zone zone, ZonesMap& zones) noexcept

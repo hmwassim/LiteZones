@@ -97,6 +97,12 @@ void TestLayoutHelpers()
     CHECK(grid1x1.rowsPercents()[0] == 10000);
     CHECK(grid1x1.columnsPercents()[0] == 10000);
 
+    LiteZonesTypes::GridLayoutInfo gridNonSeq(2, 2);
+    gridNonSeq.rowsPercents() = { 5000, 5000 };
+    gridNonSeq.columnsPercents() = { 6000, 4000 };
+    gridNonSeq.cellChildMap() = { {0, 1}, {2, 1} };
+    CHECK(gridNonSeq.zoneCount() == 3);
+
     RECT acc{};
     bool empty = true;
     LayoutHelpers::ExtendBoundingRect(acc, empty, RECT{ 10, 20, 100, 200 });
