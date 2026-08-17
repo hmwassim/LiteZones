@@ -53,6 +53,11 @@ void DragController::MoveSizeStart(HWND window)
     GetCursorPos(&cursor);
     m_currentWorkArea = WorkAreaContaining(cursor, window);
 
+    if (m_currentWorkArea)
+    {
+        m_currentWorkArea->Unsnap(window);
+    }
+
     SwitchSnappingMode(IsDraggingEnabled());
 }
 

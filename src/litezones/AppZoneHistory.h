@@ -24,6 +24,7 @@ public:
 
     ZoneIndexSet GetAppLastZoneIndexSet(const std::wstring& processPath) const;
     bool SetAppLastZones(const std::wstring& processPath, const ZoneIndexSet& zones);
+    void RemoveAppLastZone(const std::wstring& processPath);
 
     // Flush pending writes to disk if dirty.
     void FlushIfDirty() const;

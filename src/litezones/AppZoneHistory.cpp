@@ -120,6 +120,14 @@ bool AppZoneHistory::SetAppLastZones(const std::wstring& processPath, const Zone
     return true;
 }
 
+void AppZoneHistory::RemoveAppLastZone(const std::wstring& processPath)
+{
+    if (m_history.erase(processPath) > 0)
+    {
+        m_dirty = true;
+    }
+}
+
 void AppZoneHistory::FlushIfDirty() const
 {
     if (!m_dirty)

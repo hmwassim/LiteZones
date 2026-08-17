@@ -213,6 +213,13 @@ bool WorkArea::Unsnap(HWND window)
     }
 
     m_assignments.Dismiss(window);
+
+    const std::wstring processPath = WindowUtils::GetProcessPath(window);
+    if (!processPath.empty())
+    {
+        AppZoneHistory::instance().RemoveAppLastZone(processPath);
+    }
+
     return true;
 }
 
