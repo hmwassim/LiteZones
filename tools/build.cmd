@@ -3,12 +3,16 @@ setlocal EnableExtensions
 
 set "ROOT=%~dp0.."
 set "CONFIG="
-set "PLATFORM=x64"
+set "PLATFORM="
 set "MSBUILD="
 
 if /i "%~1"=="Debug" set "CONFIG=Debug"
 if /i "%~1"=="Release" set "CONFIG=Release"
 if not defined CONFIG set "CONFIG=Release"
+
+if /i "%~2"=="x64" set "PLATFORM=x64"
+if /i "%~2"=="ARM64" set "PLATFORM=ARM64"
+if not defined PLATFORM set "PLATFORM=x64"
 
 rem Locate MSBuild via vswhere (VS 2022 Build Tools / VS installs).
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
