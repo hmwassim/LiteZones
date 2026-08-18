@@ -331,13 +331,14 @@ namespace EditorCanvas
         InvalidateRect(hwnd, nullptr, TRUE);
     }
 
-    void SetGridEdit(HWND hwnd, GridData::Grid grid, int virtualWidth, int virtualHeight)
+    void SetGridEdit(HWND hwnd, GridData::Grid grid, int virtualWidth, int virtualHeight, int spacingPixels)
     {
         using namespace EditorCanvasInternal;
         CanvasView& view = View();
         view.mode = Mode::GridEdit;
         view.virtualWidth = std::max(1, virtualWidth);
         view.virtualHeight = std::max(1, virtualHeight);
+        view.spacingPixels = std::max(0, spacingPixels);
         view.zones.clear();
         view.grid = std::move(grid);
         view.canvasModel = nullptr;

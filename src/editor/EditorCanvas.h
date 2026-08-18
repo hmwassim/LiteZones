@@ -34,7 +34,11 @@ namespace EditorCanvas
     // Enters grid-edit mode. The GridData::Grid references a model owned by the
     // caller; edits are written straight back into it. virtualWidth/Height are
     // the preview's virtual space (normally the selected monitor's work area).
-    void SetGridEdit(HWND hwnd, GridData::Grid grid, int virtualWidth = 1600, int virtualHeight = 900);
+    // spacingPixels is the zone spacing that will actually be applied at
+    // runtime (see EditorWindow::m_spacingValue) - passing it here keeps the
+    // preview's drawn zone sizes consistent with what dragging a window onto
+    // this layout will actually show.
+    void SetGridEdit(HWND hwnd, GridData::Grid grid, int virtualWidth = 1600, int virtualHeight = 900, int spacingPixels = 0);
 
     // Enters canvas-edit mode. The model is owned by the caller; drawing,
     // moving and resizing write straight back into it.

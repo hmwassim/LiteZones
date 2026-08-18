@@ -11,6 +11,20 @@
 // Mapping zone id to zone
 using ZonesMap = std::map<ZoneIndex, Zone>;
 
+// Shared by LayoutConfigurator::Grid/PriorityGrid/Custom(grid) and by the
+// editor's live GridEdit preview, so both compute identical pixel rects
+// (including spacing) for the same GridLayoutInfo + work area + spacing.
+ZonesMap CalculateGridZones(RECT workArea, const LiteZonesTypes::GridLayoutInfo& gridLayoutInfo, int spacing);
+
+// Insets a single grid cell's raw rect by the zone spacing: a full `spacing`
+// margin on edges that touch the outside of the grid, and `spacing / 2` on
+// edges shared with a neighboring cell (so the gap between two adjacent
+// zones totals `spacing`). Factored out of CalculateGridZones so the editor
+// can reuse the exact same math per-cell without CalculateGridZones' all-or-
+// nothing validity check (which would blank the whole preview if a single
+// cell were briefly degenerate mid-drag).
+RECT ApplyGridCellSpacing(RECT rawCellRect, bool isFirstRow, bool isLastRow, bool isFirstCol, bool isLastCol, int spacing) noexcept;
+
 namespace LayoutConfigurator
 {
     ZonesMap Rows(RECT workArea, int zoneCount, int spacing) noexcept;

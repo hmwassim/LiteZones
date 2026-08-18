@@ -27,6 +27,7 @@ namespace EditorCanvasInternal
         EditorCanvas::Mode mode = EditorCanvas::Mode::Preview;
         int virtualWidth = 1600;
         int virtualHeight = 900;
+        int spacingPixels = 0;
         int clientWidth = 0;
         int clientHeight = 0;
         std::vector<EditorCanvas::ZoneRect> zones;

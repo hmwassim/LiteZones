@@ -57,6 +57,15 @@ bool AddZone(Zone zone, ZonesMap& zones) noexcept
     return true;
 }
 
+RECT ApplyGridCellSpacing(RECT rawCellRect, bool isFirstRow, bool isLastRow, bool isFirstCol, bool isLastCol, int spacing) noexcept
+{
+    rawCellRect.top += isFirstRow ? spacing : spacing / 2;
+    rawCellRect.bottom -= isLastRow ? spacing : spacing / 2;
+    rawCellRect.left += isFirstCol ? spacing : spacing / 2;
+    rawCellRect.right -= isLastCol ? spacing : spacing / 2;
+    return rawCellRect;
+}
+
 ZonesMap CalculateGridZones(RECT workArea, const LiteZonesTypes::GridLayoutInfo& gridLayoutInfo, int spacing)
 {
     ZonesMap zones;
@@ -120,12 +129,12 @@ ZonesMap CalculateGridZones(RECT workArea, const LiteZonesTypes::GridLayoutInfo&
                 long right = columnInfo[static_cast<size_t>(maxCol)].End;
                 long bottom = rowInfo[static_cast<size_t>(maxRow)].End;
 
-                top += row == 0 ? spacing : spacing / 2;
-                bottom -= maxRow == rows - 1 ? spacing : spacing / 2;
-                left += col == 0 ? spacing : spacing / 2;
-                right -= maxCol == columns - 1 ? spacing : spacing / 2;
+                const RECT spaced = ApplyGridCellSpacing(
+                    RECT{ left, top, right, bottom },
+                    row == 0, maxRow == rows - 1, col == 0, maxCol == columns - 1,
+                    spacing);
 
-                Zone zone(RECT{ left, top, right, bottom }, i);
+                Zone zone(spaced, i);
                 if (!zone.IsValid() || !AddZone(zone, zones))
                 {
                     return {};

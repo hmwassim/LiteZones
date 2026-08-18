@@ -1,6 +1,7 @@
 #include "EditorCanvasInternal.h"
 
 #include "Colors.h"
+#include "LayoutEngine.h"
 
 #include <algorithm>
 
@@ -68,17 +69,25 @@ namespace EditorCanvasInternal
         std::vector<EditorCanvas::ZoneRect> drawnZones;
         if (view.mode == EditorCanvas::Mode::GridEdit && view.grid)
         {
+            // Convert each cell from Multiplier space to virtual pixels, then
+            // apply the same spacing inset the runtime layout engine applies
+            // (LayoutEngine's ApplyGridCellSpacing / CalculateGridZones), so
+            // the preview's drawn size - and its WxH label - match what
+            // dragging a window onto this layout will actually show.
             for (const auto& zone : view.grid->Zones())
             {
-                drawnZones.push_back(EditorCanvas::ZoneRect{
-                    RECT{
-                        zone.left * view.virtualWidth / GridData::Multiplier,
-                        zone.top * view.virtualHeight / GridData::Multiplier,
-                        zone.right * view.virtualWidth / GridData::Multiplier,
-                        zone.bottom * view.virtualHeight / GridData::Multiplier
-                    },
-                    zone.index
-                });
+                const RECT rawRect{
+                    zone.left * view.virtualWidth / GridData::Multiplier,
+                    zone.top * view.virtualHeight / GridData::Multiplier,
+                    zone.right * view.virtualWidth / GridData::Multiplier,
+                    zone.bottom * view.virtualHeight / GridData::Multiplier
+                };
+                const RECT spacedRect = ApplyGridCellSpacing(
+                    rawRect,
+                    zone.top == 0, zone.bottom == GridData::Multiplier,
+                    zone.left == 0, zone.right == GridData::Multiplier,
+                    view.spacingPixels);
+                drawnZones.push_back(EditorCanvas::ZoneRect{ spacedRect, zone.index });
             }
         }
         else if (view.mode == EditorCanvas::Mode::CanvasEdit)

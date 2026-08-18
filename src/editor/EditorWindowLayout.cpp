@@ -314,7 +314,7 @@ void EditorWindow::UpdateCanvasPreview()
         }
 
         GridData::Grid grid(data->grid);
-        EditorCanvas::SetGridEdit(m_canvas, std::move(grid), virtualWidth, virtualHeight);
+        EditorCanvas::SetGridEdit(m_canvas, std::move(grid), virtualWidth, virtualHeight, m_spacingValue);
         return;
     }
 
