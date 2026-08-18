@@ -109,8 +109,8 @@ namespace EditorWindowInternal
                     GetDlgItemTextW(dlg, IDC_NEW_NAME, name, static_cast<int>(std::size(name)));
                     result->name = Trim(name);
                     result->grid = IsDlgButtonChecked(dlg, IDC_NEW_GRID) == BST_CHECKED;
-                    result->rows = std::max(1, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE)));
-                    result->columns = std::max(1, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE)));
+                    result->rows = std::max(1, std::min(kMaxZoneCount, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_ROWS, nullptr, FALSE))));
+                    result->columns = std::max(1, std::min(kMaxZoneCount, static_cast<int>(GetDlgItemInt(dlg, IDC_NEW_COLS, nullptr, FALSE))));
                 }
                 EndDialog(dlg, IDOK);
                 return TRUE;

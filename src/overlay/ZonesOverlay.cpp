@@ -110,6 +110,8 @@ bool ZonesOverlay::EnsureResources()
 
     if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_writeFactory))))
     {
+        m_renderTarget->Release();
+        m_renderTarget = nullptr;
         return false;
     }
     return true;

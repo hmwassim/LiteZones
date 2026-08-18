@@ -11,7 +11,6 @@ namespace
 {
     struct DialogContext
     {
-        SettingsData original;
         SettingsData edited;
     };
 
@@ -146,7 +145,6 @@ namespace
 bool SettingsDialog::Show(HWND owner, HINSTANCE hInstance)
 {
     DialogContext ctx{};
-    ctx.original = Settings::instance().data;
     ctx.edited = Settings::instance().data;
 
     const INT_PTR result = DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_SETTINGS), owner,

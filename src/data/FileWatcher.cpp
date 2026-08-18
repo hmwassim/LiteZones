@@ -102,7 +102,7 @@ DWORD FileWatcher::Run()
         events[0] = m_overlapped.hEvent;
 
         const BOOL ok = ReadDirectoryChangesW(m_dirHandle, buffer.data(), static_cast<DWORD>(buffer.size()), FALSE, kWatchFilter, &bytesReturned, &m_overlapped, nullptr);
-        if (!ok)
+        if (!ok && GetLastError() != ERROR_IO_PENDING)
         {
             CloseHandle(m_overlapped.hEvent);
             break;
