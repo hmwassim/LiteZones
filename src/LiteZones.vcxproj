@@ -159,6 +159,7 @@
     <ClInclude Include="overlay\Colors.h" />
     <ClInclude Include="overlay\HighlightedZones.h" />
     <ClInclude Include="overlay\ZonesOverlay.h" />
+    <ClInclude Include="utils\AutostartUtils.h" />
     <ClInclude Include="utils\GuidUtils.h" />
     <ClInclude Include="utils\resource.h" />
   </ItemGroup>

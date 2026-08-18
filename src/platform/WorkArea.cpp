@@ -128,6 +128,18 @@ bool WorkArea::Init(const LayoutData& layoutData)
     return true;
 }
 
+bool WorkArea::SetLayout(const LayoutData& layoutData)
+{
+    auto layout = std::make_unique<Layout>(layoutData);
+    if (!layout->Init(m_workAreaRect, m_monitor))
+    {
+        return false;
+    }
+    m_layoutData = layoutData;
+    m_layout = std::move(layout);
+    return true;
+}
+
 HWND WorkArea::GetWindow()
 {
     if (!m_window)

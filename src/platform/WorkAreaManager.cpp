@@ -68,16 +68,19 @@ void WorkAreaManager::Update(bool span, const LayoutData& defaultLayout, bool fo
     {
         const LayoutData layout = LayoutResolver::Resolve(monitor, span, defaultLayout);
 
-        // Preserve the previous WorkArea (and its snapped windows) when both the
-        // monitor rect and the resolved layout are unchanged.
         auto it = std::find_if(m_workAreas.begin(), m_workAreas.end(), [&](const WorkArea& wa) { return wa.Monitor() == monitor; });
-        if (it != m_workAreas.end())
+        if (it != m_workAreas.end() && RectsEqual(it->WorkAreaRect(), rect))
         {
-            if (RectsEqual(it->WorkAreaRect(), rect) && (!forceRelayout || it->GetLayoutData() == layout))
+            if (!forceRelayout || it->GetLayoutData() == layout)
             {
                 updated.push_back(std::move(*it));
                 continue;
             }
+            // Layout changed but monitor rect is the same: update in-place
+            // to preserve the overlay window and D2D resources.
+            it->SetLayout(layout);
+            updated.push_back(std::move(*it));
+            continue;
         }
 
         WorkArea wa(m_hInstance, monitor, rect, m_settings);

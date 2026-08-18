@@ -22,6 +22,7 @@ public:
     WorkArea& operator=(const WorkArea&) = delete;
 
     bool Init(const LayoutData& layoutData);
+    bool SetLayout(const LayoutData& layoutData);
 
     HMONITOR Monitor() const { return m_monitor; }
     RECT WorkAreaRect() const { return m_workAreaRect; }

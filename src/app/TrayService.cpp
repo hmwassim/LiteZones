@@ -6,15 +6,11 @@ namespace
 {
     constexpr UINT kTrayCallbackMessage = WM_APP + 1;
     constexpr UINT kTrayIconId = 1;
-    constexpr wchar_t kRunKey[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-    constexpr wchar_t kRunValueName[] = L"LiteZones";
-    constexpr wchar_t kWindowTitle[] = L"LiteZones";
 
     constexpr UINT kMenuToggleSnapping = 40001;
     constexpr UINT kMenuCycleLayout = 40002;
     constexpr UINT kMenuReloadConfig = 40003;
     constexpr UINT kMenuOpenFolder = 40004;
-    constexpr UINT kMenuAutostart = 40005;
     constexpr UINT kMenuExit = 40006;
     constexpr UINT kMenuEditLayouts = 40007;
     constexpr UINT kMenuSettings = 40008;
@@ -99,8 +95,6 @@ void TrayService::ShowMenu(HWND hwnd, bool snappingEnabled)
     AppendMenuW(menu, MF_STRING, kMenuReloadConfig, L"Reload config");
     AppendMenuW(menu, MF_STRING, kMenuOpenFolder, L"Open config folder");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING | (m_autostart ? MF_CHECKED : 0), kMenuAutostart, L"Start with Windows");
-    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, kMenuExit, L"Exit");
 
     SetForegroundWindow(hwnd);
@@ -127,53 +121,10 @@ void TrayService::ShowMenu(HWND hwnd, bool snappingEnabled)
     case kMenuOpenFolder:
         if (m_onOpenFolder) m_onOpenFolder();
         break;
-    case kMenuAutostart:
-        ToggleAutostart();
-        break;
     case kMenuExit:
         if (m_onExit) m_onExit();
         break;
     default:
         break;
     }
-}
-
-bool TrayService::IsAutostartEnabled() const
-{
-    HKEY key = nullptr;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, kRunKey, 0, KEY_READ, &key) != ERROR_SUCCESS)
-    {
-        return false;
-    }
-
-    wchar_t value[MAX_PATH]{};
-    DWORD size = sizeof(value);
-    const LONG result = RegQueryValueExW(key, kRunValueName, nullptr, nullptr, reinterpret_cast<BYTE*>(value), &size);
-    RegCloseKey(key);
-    return result == ERROR_SUCCESS && value[0] != L'\0';
-}
-
-void TrayService::ToggleAutostart()
-{
-    HKEY key = nullptr;
-    if (RegCreateKeyExW(HKEY_CURRENT_USER, kRunKey, 0, nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr) != ERROR_SUCCESS)
-    {
-        return;
-    }
-
-    m_autostart = !m_autostart;
-    if (m_autostart)
-    {
-        wchar_t path[MAX_PATH]{};
-        if (GetModuleFileNameW(nullptr, path, MAX_PATH) > 0)
-        {
-            const DWORD size = static_cast<DWORD>((wcslen(path) + 1) * sizeof(wchar_t));
-            RegSetValueExW(key, kRunValueName, 0, REG_SZ, reinterpret_cast<const BYTE*>(path), size);
-        }
-    }
-    else
-    {
-        RegDeleteValueW(key, kRunValueName);
-    }
-    RegCloseKey(key);
 }

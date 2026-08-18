@@ -1,6 +1,7 @@
 #include "SettingsDialog.h"
 
 #include "Settings.h"
+#include "AutostartUtils.h"
 #include "resource.h"
 
 #include <algorithm>
@@ -61,6 +62,7 @@ namespace
             Check(dlg, IDC_CHK_RESTORE_SIZE, ctx->edited.restoreSize);
             Check(dlg, IDC_CHK_SPAN_MONITORS, ctx->edited.spanZonesAcrossMonitors);
             Check(dlg, IDC_CHK_TRANSPARENT, ctx->edited.makeDraggedWindowTransparent);
+            Check(dlg, IDC_CHK_AUTOSTART, Autostart::IsEnabled());
             Check(dlg, IDC_CHK_ZONE_NUMBER, ctx->edited.showZoneNumber);
             Check(dlg, IDC_CHK_ZONE_SIZE, ctx->edited.showZoneSize);
 
@@ -112,6 +114,7 @@ namespace
                 ctx->edited.restoreSize = IsChecked(dlg, IDC_CHK_RESTORE_SIZE);
                 ctx->edited.spanZonesAcrossMonitors = IsChecked(dlg, IDC_CHK_SPAN_MONITORS);
                 ctx->edited.makeDraggedWindowTransparent = IsChecked(dlg, IDC_CHK_TRANSPARENT);
+                Autostart::SetEnabled(IsChecked(dlg, IDC_CHK_AUTOSTART));
                 ctx->edited.showZoneNumber = IsChecked(dlg, IDC_CHK_ZONE_NUMBER);
                 ctx->edited.showZoneSize = IsChecked(dlg, IDC_CHK_ZONE_SIZE);
 
