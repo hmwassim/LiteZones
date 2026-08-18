@@ -94,6 +94,10 @@ private:
     void DiscardWorkingCopy(const GUID& uuid);
     void PersistAllWorkingCopies();
     void PushUndoSnapshot();
+    void PushCreateUndoSnapshot();
+    void PushStructuralUndoSnapshot();
+    bool WorkingCopyDiffersFromStore() const;
+    bool HasUnsavedChanges() const;
     void SelectActiveLayout();
 
     HINSTANCE m_hInstance = nullptr;
@@ -118,15 +122,22 @@ private:
     std::vector<RECT> m_deviceRects;
     std::map<GUID, LiteZonesTypes::CustomLayoutData, Util::GuidLess> m_workingCopies;
     std::function<void()> m_onChanged;
-    bool m_dirty = false;
+    // m_dirty removed — use HasUnsavedChanges() instead.
     int m_selectedIndex = -1;
     HMENU m_menuFile = nullptr;
     HMENU m_menuEdit = nullptr;
     HACCEL m_hAccel = nullptr;
     UINT m_currentDpi = 96;
 
+    enum class UndoKind
+    {
+        WorkingCopyEdit,
+        StructuralChange
+    };
+
     struct UndoEntry
     {
+        UndoKind kind = UndoKind::WorkingCopyEdit;
         GUID uuid = GUID_NULL;
         std::wstring name;
         LiteZonesTypes::CustomLayoutData data;

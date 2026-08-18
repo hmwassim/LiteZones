@@ -136,6 +136,28 @@ void EditorWindow::DiscardWorkingCopy(const GUID& uuid)
     m_workingCopies.erase(uuid);
 }
 
+bool EditorWindow::WorkingCopyDiffersFromStore() const
+{
+    for (const auto& [uuid, wcData] : m_workingCopies)
+    {
+        const auto* storeData = CustomLayouts::instance().GetCustomLayoutData(uuid);
+        if (!storeData)
+        {
+            return true;
+        }
+        if (!(wcData == *storeData))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool EditorWindow::HasUnsavedChanges() const
+{
+    return WorkingCopyDiffersFromStore();
+}
+
 void EditorWindow::NotifyChanged()
 {
     if (m_onChanged)
@@ -389,7 +411,7 @@ LRESULT EditorWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         break;
 
     case WM_CLOSE:
-        if (m_dirty)
+        if (HasUnsavedChanges())
         {
             const int result = MessageBoxW(hwnd,
                                            L"Save changes to layouts before closing?",

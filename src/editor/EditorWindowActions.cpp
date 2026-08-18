@@ -102,7 +102,7 @@ void EditorWindow::OnNewLayout()
         return;
     }
     PopulateLayoutList();
-    m_dirty = true;
+    PushCreateUndoSnapshot();
     NotifyChanged();
 }
 
@@ -115,8 +115,6 @@ void EditorWindow::OnDuplicate()
     {
         return;
     }
-
-    PushUndoSnapshot();
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     GUID uuid = GUID_NULL;
@@ -175,7 +173,7 @@ void EditorWindow::OnDuplicate()
     }
 
     PopulateLayoutList();
-    m_dirty = true;
+    PushCreateUndoSnapshot();
     NotifyChanged();
 }
 
@@ -187,7 +185,7 @@ void EditorWindow::OnDelete()
         return;
     }
 
-    PushUndoSnapshot();
+    PushStructuralUndoSnapshot();
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
 
@@ -201,7 +199,6 @@ void EditorWindow::OnDelete()
     CustomLayouts::instance().DeleteLayout(entry.uuid);
     m_workingCopies.erase(entry.uuid);
     PopulateLayoutList();
-    m_dirty = true;
     NotifyChanged();
 }
 
@@ -215,7 +212,7 @@ void EditorWindow::OnRename()
         return;
     }
 
-    PushUndoSnapshot();
+    PushStructuralUndoSnapshot();
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     const auto* data = EnsureWorkingCopy(entry.uuid);
@@ -250,7 +247,6 @@ void EditorWindow::OnRename()
         return;
     }
     PopulateLayoutList();
-    m_dirty = true;
     NotifyChanged();
 
     if (name != originalName)
@@ -332,7 +328,6 @@ void EditorWindow::OnSave()
         }
     }
     PersistAllWorkingCopies();
-    m_dirty = false;
     NotifyChanged();
     UpdateApplyButtons();
 }
@@ -347,18 +342,38 @@ void EditorWindow::OnUndo()
     const UndoEntry entry = m_undoStack.back();
     m_undoStack.pop_back();
 
-    const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
-    if (currentData)
+    if (entry.kind == UndoKind::WorkingCopyEdit)
     {
-        UndoEntry redo;
-        redo.uuid = entry.uuid;
-        redo.name = entry.name;
-        redo.data = *currentData;
-        m_redoStack.push_back(std::move(redo));
-    }
+        const auto* currentData = EnsureWorkingCopy(entry.uuid);
+        if (currentData)
+        {
+            UndoEntry redo;
+            redo.kind = UndoKind::WorkingCopyEdit;
+            redo.uuid = entry.uuid;
+            redo.name = entry.name;
+            redo.data = *currentData;
+            m_redoStack.push_back(std::move(redo));
+        }
 
-    m_workingCopies[entry.uuid] = entry.data;
-    CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+        m_workingCopies[entry.uuid] = entry.data;
+    }
+    else
+    {
+        const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+        if (currentData)
+        {
+            UndoEntry redo;
+            redo.kind = UndoKind::StructuralChange;
+            redo.uuid = entry.uuid;
+            redo.name = entry.name;
+            redo.data = *currentData;
+            m_redoStack.push_back(std::move(redo));
+        }
+
+        m_workingCopies[entry.uuid] = entry.data;
+        CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+        PopulateLayoutList();
+    }
 
     for (size_t i = 0; i < m_entries.size(); ++i)
     {
@@ -383,18 +398,38 @@ void EditorWindow::OnRedo()
     const UndoEntry entry = m_redoStack.back();
     m_redoStack.pop_back();
 
-    const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
-    if (currentData)
+    if (entry.kind == UndoKind::WorkingCopyEdit)
     {
-        UndoEntry undo;
-        undo.uuid = entry.uuid;
-        undo.name = entry.name;
-        undo.data = *currentData;
-        m_undoStack.push_back(std::move(undo));
-    }
+        const auto* currentData = EnsureWorkingCopy(entry.uuid);
+        if (currentData)
+        {
+            UndoEntry undo;
+            undo.kind = UndoKind::WorkingCopyEdit;
+            undo.uuid = entry.uuid;
+            undo.name = entry.name;
+            undo.data = *currentData;
+            m_undoStack.push_back(std::move(undo));
+        }
 
-    m_workingCopies[entry.uuid] = entry.data;
-    CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+        m_workingCopies[entry.uuid] = entry.data;
+    }
+    else
+    {
+        const auto* currentData = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+        if (currentData)
+        {
+            UndoEntry undo;
+            undo.kind = UndoKind::StructuralChange;
+            undo.uuid = entry.uuid;
+            undo.name = entry.name;
+            undo.data = *currentData;
+            m_undoStack.push_back(std::move(undo));
+        }
+
+        m_workingCopies[entry.uuid] = entry.data;
+        CustomLayouts::instance().AddLayout(entry.uuid, entry.data);
+        PopulateLayoutList();
+    }
 
     for (size_t i = 0; i < m_entries.size(); ++i)
     {
@@ -434,13 +469,14 @@ void EditorWindow::PushUndoSnapshot()
     {
         return;
     }
-    const auto* data = CustomLayouts::instance().GetCustomLayoutData(entry.uuid);
+    const auto* data = EnsureWorkingCopy(entry.uuid);
     if (!data)
     {
         return;
     }
 
     UndoEntry undo;
+    undo.kind = UndoKind::WorkingCopyEdit;
     undo.uuid = entry.uuid;
     undo.name = entry.name;
     undo.data = *data;
@@ -451,4 +487,50 @@ void EditorWindow::PushUndoSnapshot()
     {
         m_undoStack.erase(m_undoStack.begin());
     }
+    UpdateUndoState();
+}
+
+void EditorWindow::PushCreateUndoSnapshot()
+{
+    m_redoStack.clear();
+    constexpr size_t kMaxUndo = 50;
+    if (m_undoStack.size() > kMaxUndo)
+    {
+        m_undoStack.erase(m_undoStack.begin());
+    }
+    UpdateUndoState();
+}
+
+void EditorWindow::PushStructuralUndoSnapshot()
+{
+    m_redoStack.clear();
+    const int index = SelectedListIndex();
+    if (index < 0 || index >= static_cast<int>(m_entries.size()))
+    {
+        return;
+    }
+    const ListEntry& entry = m_entries[static_cast<size_t>(index)];
+    if (entry.isTemplate)
+    {
+        return;
+    }
+    const auto* data = EnsureWorkingCopy(entry.uuid);
+    if (!data)
+    {
+        return;
+    }
+
+    UndoEntry undo;
+    undo.kind = UndoKind::StructuralChange;
+    undo.uuid = entry.uuid;
+    undo.name = entry.name;
+    undo.data = *data;
+    m_undoStack.push_back(std::move(undo));
+
+    constexpr size_t kMaxUndo = 50;
+    if (m_undoStack.size() > kMaxUndo)
+    {
+        m_undoStack.erase(m_undoStack.begin());
+    }
+    UpdateUndoState();
 }

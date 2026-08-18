@@ -178,6 +178,99 @@ void TestCanvasMath()
     CHECK(!CanvasMath::HandleHits(zone, CanvasMath::SW, POINT{ 200, 150 }));
 }
 
+void TestRectEquality()
+{
+    CanvasLayoutInfo::Rect a{ 10, 20, 100, 200 };
+    CanvasLayoutInfo::Rect b{ 10, 20, 100, 200 };
+    CanvasLayoutInfo::Rect c{ 10, 20, 100, 201 };
+    CHECK(a == b);
+    CHECK(!(a == c));
+}
+
+void TestGridLayoutInfoEquality()
+{
+    GridLayoutInfo a(2, 2);
+    a.rowsPercents() = { 5000, 5000 };
+    a.columnsPercents() = { 5000, 5000 };
+    a.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+    a.setShowSpacing(true);
+    a.setSpacing(16);
+    a.setSensitivityRadius(20);
+
+    GridLayoutInfo b(2, 2);
+    b.rowsPercents() = { 5000, 5000 };
+    b.columnsPercents() = { 5000, 5000 };
+    b.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+    b.setShowSpacing(true);
+    b.setSpacing(16);
+    b.setSensitivityRadius(20);
+
+    GridLayoutInfo c(2, 2);
+    c.rowsPercents() = { 5000, 5000 };
+    c.columnsPercents() = { 5000, 5000 };
+    c.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+    c.setShowSpacing(true);
+    c.setSpacing(20);
+    c.setSensitivityRadius(20);
+
+    CHECK(a == b);
+    CHECK(!(a == c));
+}
+
+void TestCanvasLayoutInfoEquality()
+{
+    CanvasLayoutInfo a;
+    a.lastWorkAreaWidth = 1920;
+    a.lastWorkAreaHeight = 1080;
+    a.zones = { { 0, 0, 960, 1080 }, { 960, 0, 1920, 1080 } };
+    a.sensitivityRadius = 20;
+
+    CanvasLayoutInfo b;
+    b.lastWorkAreaWidth = 1920;
+    b.lastWorkAreaHeight = 1080;
+    b.zones = { { 0, 0, 960, 1080 }, { 960, 0, 1920, 1080 } };
+    b.sensitivityRadius = 20;
+
+    CanvasLayoutInfo c;
+    c.lastWorkAreaWidth = 1920;
+    c.lastWorkAreaHeight = 1080;
+    c.zones = { { 0, 0, 1920, 1080 } };
+    c.sensitivityRadius = 20;
+
+    CHECK(a == b);
+    CHECK(!(a == c));
+}
+
+void TestCustomLayoutDataEquality()
+{
+    CustomLayoutData a;
+    a.name = L"Test";
+    a.type = CustomLayoutType::Grid;
+    a.grid = GridLayoutInfo(2, 2);
+    a.grid.rowsPercents() = { 5000, 5000 };
+    a.grid.columnsPercents() = { 5000, 5000 };
+    a.grid.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+
+    CustomLayoutData b;
+    b.name = L"Test";
+    b.type = CustomLayoutType::Grid;
+    b.grid = GridLayoutInfo(2, 2);
+    b.grid.rowsPercents() = { 5000, 5000 };
+    b.grid.columnsPercents() = { 5000, 5000 };
+    b.grid.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+
+    CustomLayoutData c;
+    c.name = L"Other";
+    c.type = CustomLayoutType::Grid;
+    c.grid = GridLayoutInfo(2, 2);
+    c.grid.rowsPercents() = { 5000, 5000 };
+    c.grid.columnsPercents() = { 5000, 5000 };
+    c.grid.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+
+    CHECK(a == b);
+    CHECK(!(a == c));
+}
+
 void RunEditorTests()
 {
     TestGridDataZones();
@@ -186,4 +279,8 @@ void RunEditorTests()
     TestGridDataSplit2x2();
     TestGridDataMerge();
     TestCanvasMath();
+    TestRectEquality();
+    TestGridLayoutInfoEquality();
+    TestCanvasLayoutInfoEquality();
+    TestCustomLayoutDataEquality();
 }

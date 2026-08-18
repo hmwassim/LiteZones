@@ -43,9 +43,23 @@ namespace LiteZonesTypes
             int y{};
             int width{};
             int height{};
+
+            friend bool operator==(const Rect& lhs, const Rect& rhs)
+            {
+                return lhs.x == rhs.x && lhs.y == rhs.y &&
+                       lhs.width == rhs.width && lhs.height == rhs.height;
+            }
         };
         std::vector<Rect> zones;
         int sensitivityRadius{};
+
+        friend bool operator==(const CanvasLayoutInfo& lhs, const CanvasLayoutInfo& rhs)
+        {
+            return lhs.lastWorkAreaWidth == rhs.lastWorkAreaWidth &&
+                   lhs.lastWorkAreaHeight == rhs.lastWorkAreaHeight &&
+                   lhs.zones == rhs.zones &&
+                   lhs.sensitivityRadius == rhs.sensitivityRadius;
+        }
     };
 
     struct GridLayoutInfo
@@ -76,6 +90,18 @@ namespace LiteZonesTypes
 
         int zoneCount() const;
 
+        friend bool operator==(const GridLayoutInfo& lhs, const GridLayoutInfo& rhs)
+        {
+            return lhs.m_rows == rhs.m_rows &&
+                   lhs.m_columns == rhs.m_columns &&
+                   lhs.m_rowsPercents == rhs.m_rowsPercents &&
+                   lhs.m_columnsPercents == rhs.m_columnsPercents &&
+                   lhs.m_cellChildMap == rhs.m_cellChildMap &&
+                   lhs.m_showSpacing == rhs.m_showSpacing &&
+                   lhs.m_spacing == rhs.m_spacing &&
+                   lhs.m_sensitivityRadius == rhs.m_sensitivityRadius;
+        }
+
     private:
         int m_rows{};
         int m_columns{};
@@ -93,6 +119,14 @@ namespace LiteZonesTypes
         CustomLayoutType type{};
         CanvasLayoutInfo canvas;
         GridLayoutInfo grid;
+
+        friend bool operator==(const CustomLayoutData& lhs, const CustomLayoutData& rhs)
+        {
+            return lhs.name == rhs.name &&
+                   lhs.type == rhs.type &&
+                   lhs.canvas == rhs.canvas &&
+                   lhs.grid == rhs.grid;
+        }
     };
 }
 

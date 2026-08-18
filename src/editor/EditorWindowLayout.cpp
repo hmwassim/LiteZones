@@ -36,7 +36,7 @@ bool EditorWindow::CreateControls()
         return false;
     }
 
-    EditorCanvas::SetOnEdited(m_canvas, [this]() { m_dirty = true; NotifyChanged(); UpdateApplyButtons(); });
+    EditorCanvas::SetOnEdited(m_canvas, [this]() { NotifyChanged(); UpdateApplyButtons(); });
     EditorCanvas::SetOnBeforeEdit(m_canvas, [this]() { PushUndoSnapshot(); });
     EditorCanvas::SetOnHint(m_canvas, [this](const wchar_t* msg) { SetWindowTextW(m_staticHint, msg); });
 
@@ -381,7 +381,6 @@ void EditorWindow::OnSpacingChanged()
     }
     PushUndoSnapshot();
     m_spacingValue = value;
-    m_dirty = true;
 
     const int index = SelectedListIndex();
     if (index >= 0 && index < static_cast<int>(m_entries.size()))
@@ -463,7 +462,6 @@ void EditorWindow::OnZoneCountChanged()
     }
     PushUndoSnapshot();
     m_zoneCountValue = value;
-    m_dirty = true;
 
     UpdateCanvasPreview();
     UpdateApplyButtons();
@@ -479,21 +477,32 @@ void EditorWindow::UpdateApplyButtons()
     bool canApplyAll = false;
     if (hasLayout)
     {
-        const int comboIndex = static_cast<int>(SendMessageW(m_monitorCombo, CB_GETCURSEL, 0, 0));
-        if (comboIndex >= 0 && comboIndex < static_cast<int>(m_deviceKeys.size()))
+        const bool isCustom = listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) &&
+                              !m_entries[static_cast<size_t>(listIndex)].isTemplate;
+        if (isCustom)
         {
-            const auto applied = AppliedLayouts::instance().GetDeviceLayout(m_deviceKeys[static_cast<size_t>(comboIndex)]);
-            canApply = !applied.has_value() || !(*applied == desired);
+            const bool dirty = WorkingCopyDiffersFromStore();
+            canApply = dirty;
+            canApplyAll = dirty;
         }
-
-        canApplyAll = true;
-        for (const auto& deviceKey : m_deviceKeys)
+        else
         {
-            const auto applied = AppliedLayouts::instance().GetDeviceLayout(deviceKey);
-            if (applied.has_value() && *applied == desired)
+            const int comboIndex = static_cast<int>(SendMessageW(m_monitorCombo, CB_GETCURSEL, 0, 0));
+            if (comboIndex >= 0 && comboIndex < static_cast<int>(m_deviceKeys.size()))
             {
-                canApplyAll = false;
-                break;
+                const auto applied = AppliedLayouts::instance().GetDeviceLayout(m_deviceKeys[static_cast<size_t>(comboIndex)]);
+                canApply = !applied.has_value() || !(*applied == desired);
+            }
+
+            canApplyAll = true;
+            for (const auto& deviceKey : m_deviceKeys)
+            {
+                const auto applied = AppliedLayouts::instance().GetDeviceLayout(deviceKey);
+                if (applied.has_value() && *applied == desired)
+                {
+                    canApplyAll = false;
+                    break;
+                }
             }
         }
     }

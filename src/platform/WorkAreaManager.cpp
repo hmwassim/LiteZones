@@ -71,13 +71,25 @@ void WorkAreaManager::Update(bool span, const LayoutData& defaultLayout, bool fo
         auto it = std::find_if(m_workAreas.begin(), m_workAreas.end(), [&](const WorkArea& wa) { return wa.Monitor() == monitor; });
         if (it != m_workAreas.end() && RectsEqual(it->WorkAreaRect(), rect))
         {
-            if (!forceRelayout || it->GetLayoutData() == layout)
+            // For built-in template layouts, LayoutData (type + zoneCount +
+            // spacing) fully determines the zone geometry, so comparing it is
+            // a safe "nothing changed" check. Custom layouts are only
+            // *referenced* by LayoutData - their actual zone shapes live in
+            // CustomLayouts and can change (e.g. resizing/moving a zone in
+            // the editor) without changing any of those summary fields. So
+            // LayoutData equality can't be trusted to mean "content
+            // unchanged" for Custom layouts: when forceRelayout is set,
+            // always rebuild them rather than risk keeping stale geometry.
+            const bool customContentMayHaveChanged = forceRelayout && layout.type == LiteZonesTypes::ZoneSetLayoutType::Custom;
+            if (!forceRelayout || (!customContentMayHaveChanged && it->GetLayoutData() == layout))
             {
                 updated.push_back(std::move(*it));
                 continue;
             }
-            // Layout changed but monitor rect is the same: update in-place
-            // to preserve the overlay window and D2D resources.
+
+            // Layout changed (or is a custom layout whose content we can't
+            // verify via LayoutData alone) but the monitor rect is the same:
+            // update in-place to preserve the overlay window and D2D resources.
             it->SetLayout(layout);
             updated.push_back(std::move(*it));
             continue;

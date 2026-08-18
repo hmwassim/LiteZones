@@ -171,7 +171,7 @@ void App::ReloadConfig()
     Settings::instance().Load();
     CustomLayouts::instance().LoadData();
     AppliedLayouts::instance().LoadData();
-    ReloadWorkAreas();
+    ReloadWorkAreas(true);
     m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
 }
 
@@ -214,7 +214,7 @@ void App::CycleLayoutOnMonitor()
     const std::wstring deviceKey = MonitorUtils::GetDeviceKey(monitor);
     AppliedLayouts::instance().ApplyLayout(deviceKey, candidates[next]);
     AppliedLayouts::instance().SaveData();
-    ReloadWorkAreas();
+    ReloadWorkAreas(true);
 }
 
 void App::OpenLayoutEditor()
@@ -414,7 +414,7 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         m_tray.RemoveIcon();
         m_hwnd = nullptr;
         ExitProcess(0);
-        return 0;
+        break;
 
     case WM_CLOSE:
         Exit();
