@@ -100,6 +100,13 @@ bool App::Init()
         return false;
     }
 
+    if (!Settings::instance().data.welcomeNotificationShown)
+    {
+        m_tray.ShowBalloon(m_hwnd, L"LiteZones", L"LiteZones is running. Shift+drag windows to snap.\nClick tray icon to open editor.");
+        Settings::instance().data.welcomeNotificationShown = true;
+        Settings::instance().Save();
+    }
+
     m_dragController = std::make_unique<DragController>(m_workAreaManager, Settings::instance().data);
     m_hooks = std::make_unique<Hooks>(m_hwnd);
     if (!m_hooks->Start())

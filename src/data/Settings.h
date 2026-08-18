@@ -22,6 +22,11 @@ struct SettingsData
     std::wstring zoneNumberColor = L"#000000";
 
     std::vector<std::wstring> excludedApps;
+
+    // Internal bookkeeping (not a user-facing preference): whether the
+    // one-time "LiteZones is running" tray balloon has already been shown on
+    // this machine. Not surfaced in the Settings dialog.
+    bool welcomeNotificationShown = false;
 };
 
 class Settings

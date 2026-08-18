@@ -31,17 +31,7 @@ bool TrayService::AddIcon(HWND hwnd, HINSTANCE hInstance)
     nid.uCallbackMessage = kTrayCallbackMessage;
     nid.hIcon = LoadIconW(hInstance, MAKEINTRESOURCE(IDI_APP));
     wcscpy_s(nid.szTip, L"LiteZones - Click to open editor");
-    if (Shell_NotifyIconW(NIM_ADD, &nid) == FALSE)
-    {
-        return false;
-    }
-
-    nid.uFlags = NIF_INFO;
-    wcscpy_s(nid.szInfoTitle, L"LiteZones");
-    wcscpy_s(nid.szInfo, L"LiteZones is running. Shift+drag windows to snap.\nClick tray icon to open editor.");
-    nid.dwInfoFlags = NIIF_INFO;
-    Shell_NotifyIconW(NIM_MODIFY, &nid);
-    return true;
+    return Shell_NotifyIconW(NIM_ADD, &nid) != FALSE;
 }
 
 void TrayService::RemoveIcon()

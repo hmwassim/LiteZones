@@ -22,6 +22,7 @@ namespace
     const std::wstring kKeyZoneHighlightColor = L"zoneHighlightColor";
     const std::wstring kKeyZoneNumberColor = L"zoneNumberColor";
     const std::wstring kKeyExcludedApps = L"excludedApps";
+    const std::wstring kKeyWelcomeNotificationShown = L"welcomeNotificationShown";
 
     constexpr int kMinOpacity = 0;
     constexpr int kMaxOpacity = 100;
@@ -75,6 +76,7 @@ void Settings::Load()
         fresh.showZoneNumber = root.At(kKeyShowZoneNumber).AsBool(fresh.showZoneNumber);
         fresh.showZoneSize = root.At(kKeyShowZoneSize).AsBool(fresh.showZoneSize);
         fresh.highlightOpacity = ClampOpacity(static_cast<int>(root.At(kKeyHighlightOpacity).AsNumber(fresh.highlightOpacity)));
+        fresh.welcomeNotificationShown = root.At(kKeyWelcomeNotificationShown).AsBool(fresh.welcomeNotificationShown);
 
         fresh.zoneColor = root.At(kKeyZoneColor).AsString(fresh.zoneColor);
         fresh.zoneBorderColor = root.At(kKeyZoneBorderColor).AsString(fresh.zoneBorderColor);
@@ -117,6 +119,7 @@ void Settings::Save() const
     root.Set(kKeyShowZoneNumber, data.showZoneNumber);
     root.Set(kKeyShowZoneSize, data.showZoneSize);
     root.Set(kKeyHighlightOpacity, static_cast<double>(data.highlightOpacity));
+    root.Set(kKeyWelcomeNotificationShown, data.welcomeNotificationShown);
     root.Set(kKeyZoneColor, data.zoneColor);
     root.Set(kKeyZoneBorderColor, data.zoneBorderColor);
     root.Set(kKeyZoneHighlightColor, data.zoneHighlightColor);
