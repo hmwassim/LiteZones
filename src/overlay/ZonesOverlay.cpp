@@ -148,6 +148,9 @@ void ZonesOverlay::DrawActiveZoneSet(const ZonesMap& zones, const ZoneIndexSet& 
             item.rect = ToRectF(zone.GetZoneRect(), m_dpiScale);
             item.id = static_cast<int>(id);
             item.highlighted = highlighted;
+            const RECT zr = zone.GetZoneRect();
+            item.pixelWidth = zr.right - zr.left;
+            item.pixelHeight = zr.bottom - zr.top;
             m_rects.push_back(item);
         }
     }
@@ -238,10 +241,8 @@ void ZonesOverlay::Render()
                     topHalf.bottom = (item.rect.top + item.rect.bottom) / 2.f;
                     m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, topHalf, textBrush);
 
-                    const RECT zonePx = { static_cast<LONG>(item.rect.left * m_dpiScale), static_cast<LONG>(item.rect.top * m_dpiScale),
-                                           static_cast<LONG>(item.rect.right * m_dpiScale), static_cast<LONG>(item.rect.bottom * m_dpiScale) };
-                    const int w = zonePx.right - zonePx.left;
-                    const int h = zonePx.bottom - zonePx.top;
+                    const int w = item.pixelWidth;
+                    const int h = item.pixelHeight;
                     wchar_t sizeBuf[32]{};
                     swprintf_s(sizeBuf, L"%dx%d", w, h);
                     D2D1_RECT_F bottomHalf = item.rect;

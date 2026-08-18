@@ -131,6 +131,11 @@ void EditorWindow::PersistAllWorkingCopies()
     }
 }
 
+void EditorWindow::DiscardWorkingCopy(const GUID& uuid)
+{
+    m_workingCopies.erase(uuid);
+}
+
 void EditorWindow::NotifyChanged()
 {
     if (m_onChanged)

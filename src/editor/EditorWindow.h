@@ -91,6 +91,7 @@ private:
     bool BuildApplyLayout(int listIndex, LayoutData& out) const;
     bool SelectedMonitorRect(RECT& out) const;
     LiteZonesTypes::CustomLayoutData* EnsureWorkingCopy(const GUID& uuid);
+    void DiscardWorkingCopy(const GUID& uuid);
     void PersistAllWorkingCopies();
     void PushUndoSnapshot();
     void SelectActiveLayout();
@@ -118,6 +119,7 @@ private:
     std::map<GUID, LiteZonesTypes::CustomLayoutData, Util::GuidLess> m_workingCopies;
     std::function<void()> m_onChanged;
     bool m_dirty = false;
+    int m_selectedIndex = -1;
     HMENU m_menuFile = nullptr;
     HMENU m_menuEdit = nullptr;
     HACCEL m_hAccel = nullptr;

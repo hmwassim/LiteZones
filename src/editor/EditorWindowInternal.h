@@ -23,7 +23,7 @@ namespace EditorWindowInternal
     constexpr int kMaxZoneCount = 16;
     constexpr int kMaxSpacing = 100;
     constexpr int kMinTrackWidth = 820;
-    constexpr int kMinTrackHeight = 480;
+    constexpr int kMinTrackHeight = 520;
 
     struct NewLayoutResult
     {

@@ -116,6 +116,8 @@ void EditorWindow::OnDuplicate()
         return;
     }
 
+    PushUndoSnapshot();
+
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     GUID uuid = GUID_NULL;
     CoCreateGuid(&uuid);
@@ -184,6 +186,9 @@ void EditorWindow::OnDelete()
     {
         return;
     }
+
+    PushUndoSnapshot();
+
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
 
     wchar_t message[256]{};
@@ -209,6 +214,9 @@ void EditorWindow::OnRename()
     {
         return;
     }
+
+    PushUndoSnapshot();
+
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     const auto* data = EnsureWorkingCopy(entry.uuid);
     if (!data)

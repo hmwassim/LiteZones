@@ -32,6 +32,8 @@ private:
         D2D1_RECT_F rect{};
         int id = 0;
         bool highlighted = false;
+        int pixelWidth = 0;
+        int pixelHeight = 0;
     };
 
     bool EnsureResources();

@@ -36,7 +36,7 @@ bool EditorWindow::CreateControls()
         return false;
     }
 
-    EditorCanvas::SetOnEdited(m_canvas, [this]() { m_dirty = true; NotifyChanged(); });
+    EditorCanvas::SetOnEdited(m_canvas, [this]() { m_dirty = true; NotifyChanged(); UpdateApplyButtons(); });
     EditorCanvas::SetOnBeforeEdit(m_canvas, [this]() { PushUndoSnapshot(); });
     EditorCanvas::SetOnHint(m_canvas, [this](const wchar_t* msg) { SetWindowTextW(m_staticHint, msg); });
 
@@ -104,8 +104,8 @@ void EditorWindow::LayoutControls()
     MoveWindow(GetDlgItem(m_hwnd, kBtnDelete), pad, height - LayoutHelpers::ScaleForDpi(32, dpi), buttonWidth, ctrlH, TRUE);
     MoveWindow(GetDlgItem(m_hwnd, kBtnRename), pad + buttonWidth + pad, height - LayoutHelpers::ScaleForDpi(32, dpi), buttonWidth, ctrlH, TRUE);
 
-    MoveWindow(m_canvas, panelW + pad, LayoutHelpers::ScaleForDpi(40, dpi), std::max(LayoutHelpers::ScaleForDpi(60, dpi), width - panelW - pad * 2), std::max(LayoutHelpers::ScaleForDpi(60, dpi), height - LayoutHelpers::ScaleForDpi(40, dpi) - LayoutHelpers::ScaleForDpi(32, dpi)), TRUE);
-    MoveWindow(m_staticHint, panelW + pad, height - LayoutHelpers::ScaleForDpi(24, dpi), std::max(LayoutHelpers::ScaleForDpi(60, dpi), width - panelW - pad * 2), LayoutHelpers::ScaleForDpi(18, dpi), TRUE);
+    MoveWindow(m_canvas, panelW + pad, LayoutHelpers::ScaleForDpi(40, dpi), std::max(LayoutHelpers::ScaleForDpi(60, dpi), width - panelW - pad * 2), std::max(LayoutHelpers::ScaleForDpi(60, dpi), height - LayoutHelpers::ScaleForDpi(40, dpi) - LayoutHelpers::ScaleForDpi(44, dpi)), TRUE);
+    MoveWindow(m_staticHint, panelW + pad, height - LayoutHelpers::ScaleForDpi(38, dpi), std::max(LayoutHelpers::ScaleForDpi(60, dpi), width - panelW - pad * 2), LayoutHelpers::ScaleForDpi(36, dpi), TRUE);
 }
 
 void EditorWindow::PopulateLayoutList()
@@ -152,6 +152,7 @@ void EditorWindow::PopulateLayoutList()
         }
     }
     SendMessageW(m_listBox, LB_SETCURSEL, selectIndex, 0);
+    m_selectedIndex = selectIndex;
     OnSelectionChanged();
 }
 
@@ -195,6 +196,17 @@ void EditorWindow::OnSelectionChanged()
     using namespace EditorWindowInternal;
 
     const int index = SelectedListIndex();
+
+    if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<int>(m_entries.size()) && index != m_selectedIndex)
+    {
+        const ListEntry& prev = m_entries[static_cast<size_t>(m_selectedIndex)];
+        if (!prev.isTemplate)
+        {
+            DiscardWorkingCopy(prev.uuid);
+        }
+    }
+    m_selectedIndex = index;
+
     if (index < 0 || index >= static_cast<int>(m_entries.size()))
     {
         EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), FALSE);
@@ -218,7 +230,7 @@ void EditorWindow::OnSelectionChanged()
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     const bool isCustom = !entry.isTemplate;
-    EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), FALSE);
+    EnableWindow(GetDlgItem(m_hwnd, kBtnDuplicate), TRUE);
     EnableWindow(GetDlgItem(m_hwnd, kBtnDelete), isCustom);
     EnableWindow(GetDlgItem(m_hwnd, kBtnRename), isCustom);
 
@@ -331,6 +343,18 @@ void EditorWindow::UpdateSpacingControl()
                 }
             }
         }
+        else
+        {
+            const int comboIndex = static_cast<int>(SendMessageW(m_monitorCombo, CB_GETCURSEL, 0, 0));
+            if (comboIndex >= 0 && comboIndex < static_cast<int>(m_deviceKeys.size()))
+            {
+                const auto applied = AppliedLayouts::instance().GetDeviceLayout(m_deviceKeys[static_cast<size_t>(comboIndex)]);
+                if (applied.has_value() && applied->type == entry.type)
+                {
+                    spacing = applied->spacing;
+                }
+            }
+        }
     }
 
     m_spacingValue = spacing;
@@ -351,6 +375,11 @@ void EditorWindow::OnSpacingChanged()
         return;
     }
     value = std::max(0, std::min(kMaxSpacing, value));
+    if (value == m_spacingValue)
+    {
+        return;
+    }
+    PushUndoSnapshot();
     m_spacingValue = value;
     m_dirty = true;
 
@@ -396,6 +425,18 @@ void EditorWindow::UpdateZoneCountControl()
                                 : static_cast<int>(data->canvas.zones.size());
             }
         }
+        else
+        {
+            const int comboIndex = static_cast<int>(SendMessageW(m_monitorCombo, CB_GETCURSEL, 0, 0));
+            if (comboIndex >= 0 && comboIndex < static_cast<int>(m_deviceKeys.size()))
+            {
+                const auto applied = AppliedLayouts::instance().GetDeviceLayout(m_deviceKeys[static_cast<size_t>(comboIndex)]);
+                if (applied.has_value() && applied->type == entry.type)
+                {
+                    zoneCount = applied->zoneCount;
+                }
+            }
+        }
     }
 
     m_zoneCountValue = zoneCount;
@@ -416,6 +457,11 @@ void EditorWindow::OnZoneCountChanged()
         return;
     }
     value = std::max(1, std::min(kMaxZoneCount, value));
+    if (value == m_zoneCountValue)
+    {
+        return;
+    }
+    PushUndoSnapshot();
     m_zoneCountValue = value;
     m_dirty = true;
 
