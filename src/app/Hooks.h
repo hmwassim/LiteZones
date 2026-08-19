@@ -29,12 +29,20 @@ public:
     void EnableMouseButtonHook();
     void DisableMouseButtonHook();
 
+    // Forwards raw WM_MOUSEMOVE as a zone-highlight refresh trigger (kept
+    // active only while dragging). EVENT_OBJECT_LOCATIONCHANGE can be
+    // coalesced by the OS after a mouse-button event; raw movement is a
+    // reliable supplement.
+    void EnableMouseMoveTracking();
+    void DisableMouseMoveTracking();
+
 private:
     static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
     static void CALLBACK WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD eventThread, DWORD eventTime);
 
     static HWND s_targetWindow;
+    static bool s_trackMouseMove;
 
     HWND m_targetWindow = nullptr;
     HHOOK m_keyboardHook = nullptr;

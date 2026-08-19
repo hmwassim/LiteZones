@@ -93,6 +93,16 @@ void Hooks::DisableMouseButtonHook()
     }
 }
 
+void Hooks::EnableMouseMoveTracking()
+{
+    s_trackMouseMove = true;
+}
+
+void Hooks::DisableMouseMoveTracking()
+{
+    s_trackMouseMove = false;
+}
+
 LRESULT CALLBACK Hooks::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HC_ACTION)
@@ -131,6 +141,10 @@ LRESULT CALLBACK Hooks::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lPara
             const UINT button = (wParam == WM_RBUTTONDOWN || wParam == WM_RBUTTONUP) ? VK_RBUTTON : VK_MBUTTON;
             PostMessageW(s_targetWindow, WM_PRIV_MOUSEBUTTON, button, down ? 1 : 0);
         }
+        else if (wParam == WM_MOUSEMOVE && s_trackMouseMove)
+        {
+            PostMessageW(s_targetWindow, WM_PRIV_LOCATIONCHANGE, 0, 0);
+        }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
@@ -168,3 +182,4 @@ void CALLBACK Hooks::WinEventProc(HWINEVENTHOOK hook, DWORD event, HWND hwnd, LO
 }
 
 HWND Hooks::s_targetWindow = nullptr;
+bool Hooks::s_trackMouseMove = false;

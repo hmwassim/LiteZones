@@ -44,7 +44,7 @@ void TestHexToRgbInvalidInput()
     const auto colors = Colors::GetZoneColors(settings);
     CHECK(colors.primaryColor == RGB(170, 205, 255));
     CHECK(colors.borderColor == RGB(255, 255, 255));
-    CHECK(colors.highlightColor == RGB(255, 255, 255));
+    CHECK(colors.highlightColor == RGB(0, 140, 255));
     CHECK(colors.numberColor == RGB(0, 0, 0));
 }
 

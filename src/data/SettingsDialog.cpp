@@ -46,6 +46,31 @@ namespace
         }
     }
 
+    void ReadControlsAndSave(HWND dlg, DialogContext* ctx)
+    {
+        ctx->edited.shiftDrag = IsChecked(dlg, IDC_CHK_SHIFT_DRAG);
+        ctx->edited.mouseSwitch = IsChecked(dlg, IDC_CHK_MOUSE_SWITCH);
+        ctx->edited.mouseMiddleClickSpanningMultipleZones = IsChecked(dlg, IDC_CHK_MOUSE_MIDDLE);
+        ctx->edited.moveWindowAcrossMonitors = IsChecked(dlg, IDC_CHK_MOVE_ACROSS);
+        ctx->edited.restoreSize = IsChecked(dlg, IDC_CHK_RESTORE_SIZE);
+        ctx->edited.spanZonesAcrossMonitors = IsChecked(dlg, IDC_CHK_SPAN_MONITORS);
+        ctx->edited.makeDraggedWindowTransparent = IsChecked(dlg, IDC_CHK_TRANSPARENT);
+        Autostart::SetEnabled(IsChecked(dlg, IDC_CHK_AUTOSTART));
+        ctx->edited.showZoneNumber = IsChecked(dlg, IDC_CHK_ZONE_NUMBER);
+        ctx->edited.showZoneSize = IsChecked(dlg, IDC_CHK_ZONE_SIZE);
+
+        int opacity = GetDlgItemInt(dlg, IDC_EDIT_OPACITY, nullptr, FALSE);
+        ctx->edited.highlightOpacity = std::max(0, std::min(100, opacity));
+
+        ctx->edited.zoneColor = GetEditText(dlg, IDC_EDIT_ZONE_COLOR);
+        ctx->edited.zoneBorderColor = GetEditText(dlg, IDC_EDIT_BORDER_COLOR);
+        ctx->edited.zoneHighlightColor = GetEditText(dlg, IDC_EDIT_HIGHLIGHT_COLOR);
+        ctx->edited.zoneNumberColor = GetEditText(dlg, IDC_EDIT_NUMBER_COLOR);
+
+        Settings::instance().data = ctx->edited;
+        Settings::instance().Save();
+    }
+
     INT_PTR CALLBACK SettingsDlgProc(HWND dlg, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         switch (msg)
@@ -108,29 +133,13 @@ namespace
             }
             case IDOK:
             {
-                ctx->edited.shiftDrag = IsChecked(dlg, IDC_CHK_SHIFT_DRAG);
-                ctx->edited.mouseSwitch = IsChecked(dlg, IDC_CHK_MOUSE_SWITCH);
-                ctx->edited.mouseMiddleClickSpanningMultipleZones = IsChecked(dlg, IDC_CHK_MOUSE_MIDDLE);
-                ctx->edited.moveWindowAcrossMonitors = IsChecked(dlg, IDC_CHK_MOVE_ACROSS);
-                ctx->edited.restoreSize = IsChecked(dlg, IDC_CHK_RESTORE_SIZE);
-                ctx->edited.spanZonesAcrossMonitors = IsChecked(dlg, IDC_CHK_SPAN_MONITORS);
-                ctx->edited.makeDraggedWindowTransparent = IsChecked(dlg, IDC_CHK_TRANSPARENT);
-                Autostart::SetEnabled(IsChecked(dlg, IDC_CHK_AUTOSTART));
-                ctx->edited.showZoneNumber = IsChecked(dlg, IDC_CHK_ZONE_NUMBER);
-                ctx->edited.showZoneSize = IsChecked(dlg, IDC_CHK_ZONE_SIZE);
-
-                int opacity = GetDlgItemInt(dlg, IDC_EDIT_OPACITY, nullptr, FALSE);
-                ctx->edited.highlightOpacity = std::max(0, std::min(100, opacity));
-
-                ctx->edited.zoneColor = GetEditText(dlg, IDC_EDIT_ZONE_COLOR);
-                ctx->edited.zoneBorderColor = GetEditText(dlg, IDC_EDIT_BORDER_COLOR);
-                ctx->edited.zoneHighlightColor = GetEditText(dlg, IDC_EDIT_HIGHLIGHT_COLOR);
-                ctx->edited.zoneNumberColor = GetEditText(dlg, IDC_EDIT_NUMBER_COLOR);
-
-                Settings::instance().data = ctx->edited;
-                Settings::instance().Save();
-
+                ReadControlsAndSave(dlg, ctx);
                 EndDialog(dlg, IDOK);
+                return TRUE;
+            }
+            case IDC_APPLY:
+            {
+                ReadControlsAndSave(dlg, ctx);
                 return TRUE;
             }
             case IDCANCEL:

@@ -188,7 +188,7 @@ void ZonesOverlay::Render()
     IDWriteTextFormat* textFormat = nullptr;
     if (m_showZoneText && m_writeFactory)
     {
-        if (SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 24.f, L"en-US", &textFormat)))
+        if (SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 80.f, L"en-US", &textFormat)))
         {
             textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);

@@ -122,6 +122,14 @@ void DragController::MoveSizeUpdate()
 
 void DragController::MoveSizeEnd()
 {
+    // A secondary button press (right/middle-click) during a drag can cause
+    // Windows to fire EVENT_SYSTEM_MOVESIZEEND even though the user is still
+    // dragging. Ignore it if the left button is still held.
+    if (m_draggingWindow && (GetAsyncKeyState(VK_LBUTTON) & 0x8000))
+    {
+        return;
+    }
+
     if (m_draggingWindow)
     {
         if (m_snappingMode)

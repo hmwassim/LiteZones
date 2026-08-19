@@ -187,15 +187,22 @@ void App::ReloadWorkAreas(bool forceRelayout)
     if (m_dragController)
     {
         m_dragController->MoveSizeEnd();
-        if (m_hooks)
+        if (!m_dragController->IsDragging())
         {
-            m_hooks->DisableLocationChangeTracking();
-            m_hooks->DisableMouseButtonHook();
+            if (m_hooks)
+            {
+                m_hooks->DisableLocationChangeTracking();
+                m_hooks->DisableMouseButtonHook();
+                m_hooks->DisableMouseMoveTracking();
+            }
         }
     }
 
-    LayoutData layout = LayoutHelpers::MakeDefaultLayout();
-    m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout, forceRelayout);
+    if (!m_dragController || !m_dragController->IsDragging())
+    {
+        LayoutData layout = LayoutHelpers::MakeDefaultLayout();
+        m_workAreaManager.Update(Settings::instance().data.spanZonesAcrossMonitors, layout, forceRelayout);
+    }
 }
 
 void App::CycleLayoutOnMonitor()
@@ -290,6 +297,7 @@ void App::HandleMoveSizeStart(HWND window)
         {
             m_hooks->EnableLocationChangeTracking();
             m_hooks->EnableMouseButtonHook();
+            m_hooks->EnableMouseMoveTracking();
         }
         m_dragController->MoveSizeUpdate();
     }
@@ -309,10 +317,17 @@ void App::HandleMoveSizeEnd()
     {
         m_dragController->MoveSizeEnd();
     }
-    if (m_hooks)
+    // Only disable hooks if the drag actually ended. MoveSizeEnd() may return
+    // early (e.g. left button still held during a spurious end event), in which
+    // case the drag is still logically active and hooks must stay alive.
+    if (m_dragController && !m_dragController->IsDragging())
     {
-        m_hooks->DisableLocationChangeTracking();
-        m_hooks->DisableMouseButtonHook();
+        if (m_hooks)
+        {
+            m_hooks->DisableLocationChangeTracking();
+            m_hooks->DisableMouseButtonHook();
+            m_hooks->DisableMouseMoveTracking();
+        }
     }
 }
 
@@ -322,10 +337,14 @@ void App::HandleWindowDestroyed(HWND window)
     {
         m_dragController->OnWindowDestroyed(window);
     }
-    if (m_hooks)
+    if (m_dragController && !m_dragController->IsDragging())
     {
-        m_hooks->DisableLocationChangeTracking();
-        m_hooks->DisableMouseButtonHook();
+        if (m_hooks)
+        {
+            m_hooks->DisableLocationChangeTracking();
+            m_hooks->DisableMouseButtonHook();
+            m_hooks->DisableMouseMoveTracking();
+        }
     }
 }
 

@@ -18,7 +18,7 @@ struct SettingsData
 
     std::wstring zoneColor = L"#AACDFF";
     std::wstring zoneBorderColor = L"#FFFFFF";
-    std::wstring zoneHighlightColor = L"#FFFFFF";
+    std::wstring zoneHighlightColor = L"#008CFF";
     std::wstring zoneNumberColor = L"#000000";
 
     std::vector<std::wstring> excludedApps;

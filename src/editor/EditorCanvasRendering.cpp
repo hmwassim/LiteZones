@@ -135,7 +135,7 @@ namespace EditorCanvasInternal
 
             const int pixW = zone.rect.right - zone.rect.left;
             const int pixH = zone.rect.bottom - zone.rect.top;
-            DrawZoneLabel(dc, rect, zone.index, pixW, pixH, colors.numberColor);
+            DrawZoneLabel(dc, rect, zone.index + 1, pixW, pixH, colors.numberColor);
         }
 
         if (view.mode == EditorCanvas::Mode::CanvasEdit && view.canvasModel &&
