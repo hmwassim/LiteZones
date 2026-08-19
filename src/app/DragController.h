@@ -32,6 +32,7 @@ public:
 private:
     bool IsDraggingEnabled() const;
     bool IsSelectManyZonesState() const;
+    void UpdateShiftState();
     void SwitchSnappingMode(bool isSnapping);
     WorkArea* WorkAreaContaining(const POINT& cursor, HWND window) const;
     void SetWindowTransparency();
@@ -55,6 +56,7 @@ private:
     bool m_snappingMode = false;
     bool m_shiftPressed = false;
     bool m_ctrlPressed = false;
-    bool m_secondaryMouse = false;
+    bool m_actualShiftPressed = false; // real keyboard shift state
+    bool m_rightClickShift = false; // toggled by right-click, treated as shift
     bool m_middleMouse = false;
 };

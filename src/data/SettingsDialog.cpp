@@ -56,6 +56,7 @@ namespace
             auto* ctx = reinterpret_cast<DialogContext*>(lParam);
 
             Check(dlg, IDC_CHK_SHIFT_DRAG, ctx->edited.shiftDrag);
+            Check(dlg, IDC_CHK_MOUSE_SWITCH, ctx->edited.mouseSwitch);
             Check(dlg, IDC_CHK_MOUSE_MIDDLE, ctx->edited.mouseMiddleClickSpanningMultipleZones);
             Check(dlg, IDC_CHK_MOVE_ACROSS, ctx->edited.moveWindowAcrossMonitors);
             Check(dlg, IDC_CHK_RESTORE_SIZE, ctx->edited.restoreSize);
@@ -108,6 +109,7 @@ namespace
             case IDOK:
             {
                 ctx->edited.shiftDrag = IsChecked(dlg, IDC_CHK_SHIFT_DRAG);
+                ctx->edited.mouseSwitch = IsChecked(dlg, IDC_CHK_MOUSE_SWITCH);
                 ctx->edited.mouseMiddleClickSpanningMultipleZones = IsChecked(dlg, IDC_CHK_MOUSE_MIDDLE);
                 ctx->edited.moveWindowAcrossMonitors = IsChecked(dlg, IDC_CHK_MOVE_ACROSS);
                 ctx->edited.restoreSize = IsChecked(dlg, IDC_CHK_RESTORE_SIZE);

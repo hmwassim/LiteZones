@@ -24,17 +24,23 @@ DragController::~DragController()
 
 bool DragController::IsDraggingEnabled() const
 {
-    // Shift gates snapping unless the secondary mouse button is held instead.
-    // The secondary mouse only participates when mouseSwitch is enabled.
-    const bool secondaryHeld = m_settings.mouseSwitch ? m_secondaryMouse : false;
-    const bool toggled = m_shiftPressed != secondaryHeld;
-    return m_settings.shiftDrag ? toggled : !toggled;
+    // Right-click toggles m_shiftPressed directly (via UpdateShiftState), making
+    // it behave identically to holding the shift key — same flag, same code path.
+    return m_settings.shiftDrag ? m_shiftPressed : !m_shiftPressed;
 }
 
 bool DragController::IsSelectManyZonesState() const
 {
     return m_ctrlPressed || m_middleMouse;
 }
+
+void DragController::UpdateShiftState()
+{
+    // XOR: real shift and right-click-shift cancel each other out, so only
+    // one needs to be active for snapping to toggle.
+    m_shiftPressed = m_actualShiftPressed != m_rightClickShift;
+}
+
 void DragController::MoveSizeStart(HWND window)
 {
     if (m_draggingWindow)
@@ -52,6 +58,8 @@ void DragController::MoveSizeStart(HWND window)
 
     m_draggingWindow = window;
     m_snappingMode = false;
+    m_rightClickShift = false;
+    UpdateShiftState();
     m_highlightedZones.Reset();
 
     POINT cursor{};
@@ -144,6 +152,8 @@ void DragController::MoveSizeEnd()
     SwitchSnappingMode(false);
     m_draggingWindow = nullptr;
     m_currentWorkArea = nullptr;
+    m_rightClickShift = false;
+    UpdateShiftState();
 }
 
 void DragController::OnWindowDestroyed(HWND window)
@@ -154,6 +164,8 @@ void DragController::OnWindowDestroyed(HWND window)
         SwitchSnappingMode(false);
         m_draggingWindow = nullptr;
         m_currentWorkArea = nullptr;
+        m_rightClickShift = false;
+        UpdateShiftState();
     }
 }
 
@@ -161,7 +173,8 @@ void DragController::OnKeyStateChanged(UINT vk, bool pressed)
 {
     if (vk == VK_SHIFT)
     {
-        m_shiftPressed = pressed;
+        m_actualShiftPressed = pressed;
+        UpdateShiftState();
     }
     else if (vk == VK_CONTROL)
     {
@@ -182,7 +195,13 @@ void DragController::OnMouseButtonChanged(UINT button, bool down)
 {
     if (button == VK_RBUTTON)
     {
-        m_secondaryMouse = down;
+        if (m_settings.mouseSwitch && down && m_draggingWindow)
+        {
+            // Toggle right-click-shift: treated identically to the real shift key
+            // via UpdateShiftState(), so the right-click path is the same code path.
+            m_rightClickShift = !m_rightClickShift;
+            UpdateShiftState();
+        }
     }
     else if (button == VK_MBUTTON)
     {
@@ -190,9 +209,10 @@ void DragController::OnMouseButtonChanged(UINT button, bool down)
         {
             m_middleMouse = down;
         }
-        else
+        else if (m_settings.mouseSwitch && down && m_draggingWindow)
         {
-            m_secondaryMouse = down;
+            m_rightClickShift = !m_rightClickShift;
+            UpdateShiftState();
         }
     }
     else

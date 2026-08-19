@@ -190,6 +190,7 @@ void App::ReloadWorkAreas(bool forceRelayout)
         if (m_hooks)
         {
             m_hooks->DisableLocationChangeTracking();
+            m_hooks->DisableMouseButtonHook();
         }
     }
 
@@ -288,6 +289,7 @@ void App::HandleMoveSizeStart(HWND window)
         if (m_hooks)
         {
             m_hooks->EnableLocationChangeTracking();
+            m_hooks->EnableMouseButtonHook();
         }
         m_dragController->MoveSizeUpdate();
     }
@@ -310,6 +312,7 @@ void App::HandleMoveSizeEnd()
     if (m_hooks)
     {
         m_hooks->DisableLocationChangeTracking();
+        m_hooks->DisableMouseButtonHook();
     }
 }
 
@@ -322,6 +325,7 @@ void App::HandleWindowDestroyed(HWND window)
     if (m_hooks)
     {
         m_hooks->DisableLocationChangeTracking();
+        m_hooks->DisableMouseButtonHook();
     }
 }
 

@@ -19,14 +19,12 @@ bool Hooks::Start()
     s_targetWindow = m_targetWindow;
 
     m_keyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, &Hooks::LowLevelKeyboardProc, GetModuleHandleW(nullptr), 0);
-    m_mouseHook = SetWindowsHookExW(WH_MOUSE_LL, &Hooks::LowLevelMouseProc, GetModuleHandleW(nullptr), 0);
 
     m_moveStartHook = SetWinEventHook(EVENT_SYSTEM_MOVESIZESTART, EVENT_SYSTEM_MOVESIZESTART, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
     m_moveEndHook = SetWinEventHook(EVENT_SYSTEM_MOVESIZEEND, EVENT_SYSTEM_MOVESIZEEND, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
     m_destroyHook = SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_DESTROY, nullptr, &Hooks::WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
     return m_keyboardHook != nullptr
-        && m_mouseHook != nullptr
         && m_moveStartHook != nullptr
         && m_moveEndHook != nullptr
         && m_destroyHook != nullptr;
@@ -35,6 +33,7 @@ bool Hooks::Start()
 void Hooks::Stop()
 {
     DisableLocationChangeTracking();
+    DisableMouseButtonHook();
 
     if (m_moveStartHook)
     {
@@ -56,11 +55,6 @@ void Hooks::Stop()
         UnhookWindowsHookEx(m_keyboardHook);
         m_keyboardHook = nullptr;
     }
-    if (m_mouseHook)
-    {
-        UnhookWindowsHookEx(m_mouseHook);
-        m_mouseHook = nullptr;
-    }
 
     s_targetWindow = nullptr;
 }
@@ -79,6 +73,23 @@ void Hooks::DisableLocationChangeTracking()
     {
         UnhookWinEvent(m_locationChangeHook);
         m_locationChangeHook = nullptr;
+    }
+}
+
+void Hooks::EnableMouseButtonHook()
+{
+    if (!m_mouseHook)
+    {
+        m_mouseHook = SetWindowsHookExW(WH_MOUSE_LL, &Hooks::LowLevelMouseProc, GetModuleHandleW(nullptr), 0);
+    }
+}
+
+void Hooks::DisableMouseButtonHook()
+{
+    if (m_mouseHook)
+    {
+        UnhookWindowsHookEx(m_mouseHook);
+        m_mouseHook = nullptr;
     }
 }
 

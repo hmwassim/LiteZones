@@ -25,6 +25,10 @@ public:
     void EnableLocationChangeTracking();
     void DisableLocationChangeTracking();
 
+    // Adds/removes the WH_MOUSE_LL hook (kept active only while dragging).
+    void EnableMouseButtonHook();
+    void DisableMouseButtonHook();
+
 private:
     static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
