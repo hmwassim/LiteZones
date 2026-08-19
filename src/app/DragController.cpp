@@ -81,6 +81,19 @@ void DragController::MoveSizeUpdate()
         return;
     }
 
+    // Safety net for the early-return in MoveSizeEnd(): that guard suppresses
+    // a MOVESIZEEND WinEvent that fires while the left button still looks
+    // held, on the assumption a real MOVESIZEEND will follow once the button
+    // is actually released. If Windows never sends that follow-up event,
+    // the drag would otherwise stay stuck forever. This re-checks the
+    // physical button state directly, so the drag ends itself on the very
+    // next update once the button is genuinely up.
+    if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
+    {
+        MoveSizeEnd();
+        return;
+    }
+
     POINT cursor{};
     GetCursorPos(&cursor);
 
@@ -124,7 +137,8 @@ void DragController::MoveSizeEnd()
 {
     // A secondary button press (right/middle-click) during a drag can cause
     // Windows to fire EVENT_SYSTEM_MOVESIZEEND even though the user is still
-    // dragging. Ignore it if the left button is still held.
+    // dragging. Ignore it if the left button is still held; MoveSizeUpdate()
+    // has a matching safety net in case no further WinEvent ever arrives.
     if (m_draggingWindow && (GetAsyncKeyState(VK_LBUTTON) & 0x8000))
     {
         return;
