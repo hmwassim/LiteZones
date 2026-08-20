@@ -9,10 +9,38 @@ namespace
 {
     const Json kNullJson;
 
+    // Recursion-depth guard: settings/layout files are normally written by
+    // LiteZones itself, but a hand-edited or corrupted file with deeply
+    // nested arrays/objects could otherwise blow the stack via the
+    // recursive-descent parser below. 200 levels is far beyond anything a
+    // real config file needs.
+    constexpr int kMaxNestingDepth = 200;
+
     struct ParseContext
     {
         const wchar_t* pos = nullptr;
         bool failed = false;
+        int depth = 0;
+    };
+
+    // RAII depth tracker: increments on construction, decrements on
+    // destruction (so every early-return path in ParseObject/ParseArray
+    // still unwinds the counter correctly).
+    struct DepthGuard
+    {
+        ParseContext& ctx;
+        explicit DepthGuard(ParseContext& c) : ctx(c)
+        {
+            ++ctx.depth;
+        }
+        ~DepthGuard()
+        {
+            --ctx.depth;
+        }
+        bool TooDeep() const
+        {
+            return ctx.depth > kMaxNestingDepth;
+        }
     };
 
     void SkipWhitespace(ParseContext& ctx)
@@ -149,6 +177,12 @@ namespace
 
     bool ParseArray(ParseContext& ctx, Json& out)
     {
+        DepthGuard guard(ctx);
+        if (guard.TooDeep())
+        {
+            return false;
+        }
+
         ++ctx.pos;
         SkipWhitespace(ctx);
         if (*ctx.pos == L']')
@@ -184,6 +218,12 @@ namespace
 
     bool ParseObject(ParseContext& ctx, Json& out)
     {
+        DepthGuard guard(ctx);
+        if (guard.TooDeep())
+        {
+            return false;
+        }
+
         ++ctx.pos;
         SkipWhitespace(ctx);
         if (*ctx.pos == L'}')

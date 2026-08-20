@@ -150,6 +150,35 @@ void TestJsonParseEdgeCases()
     CHECK(!Json::Parse(L"nul", val));
 }
 
+void TestJsonParseDepthLimit()
+{
+    // A settings/layout file with a deeply nested array or object (corrupted
+    // or hand-edited) must fail to parse rather than crash the process via
+    // stack overflow in the recursive-descent parser.
+    Json val;
+
+    std::wstring deepArray(250, L'[');
+    deepArray.append(250, L']');
+    CHECK(!Json::Parse(deepArray, val));
+
+    std::wstring deepObject;
+    for (int i = 0; i < 250; ++i)
+    {
+        deepObject += L"{\"a\":";
+    }
+    deepObject += L"1";
+    for (int i = 0; i < 250; ++i)
+    {
+        deepObject += L"}";
+    }
+    CHECK(!Json::Parse(deepObject, val));
+
+    // Nesting comfortably under the limit must still parse fine.
+    std::wstring shallowArray(50, L'[');
+    shallowArray.append(50, L']');
+    CHECK(Json::Parse(shallowArray, val));
+}
+
 void TestJsonRoundTrip()
 {
     const std::wstring inputs[] = {
@@ -236,6 +265,7 @@ void RunJsonTests()
     TestJsonParseStrings();
     TestJsonParseStructures();
     TestJsonParseEdgeCases();
+    TestJsonParseDepthLimit();
     TestJsonRoundTrip();
     TestJsonApi();
     TestJsonSerializeIndented();
