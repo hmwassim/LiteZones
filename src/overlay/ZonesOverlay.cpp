@@ -40,17 +40,49 @@ ZonesOverlay::ZonesOverlay(HWND window) :
 
 ZonesOverlay::~ZonesOverlay()
 {
+    ReleaseDeviceResources();
+    if (m_textFormat)
+    {
+        m_textFormat->Release();
+    }
+    if (m_sizeFormat)
+    {
+        m_sizeFormat->Release();
+    }
     if (m_writeFactory)
     {
         m_writeFactory->Release();
     }
-    if (m_renderTarget)
-    {
-        m_renderTarget->Release();
-    }
     if (m_d2dFactory)
     {
         m_d2dFactory->Release();
+    }
+}
+
+void ZonesOverlay::ReleaseDeviceResources()
+{
+    // Brushes are device-dependent (created from m_renderTarget), so they
+    // must be dropped and recreated whenever the render target is. Text
+    // formats and m_writeFactory are device-independent and outlive this.
+    if (m_fillBrush)
+    {
+        m_fillBrush->Release();
+        m_fillBrush = nullptr;
+    }
+    if (m_borderBrush)
+    {
+        m_borderBrush->Release();
+        m_borderBrush = nullptr;
+    }
+    if (m_textBrush)
+    {
+        m_textBrush->Release();
+        m_textBrush = nullptr;
+    }
+    if (m_renderTarget)
+    {
+        m_renderTarget->Release();
+        m_renderTarget = nullptr;
     }
 }
 
@@ -108,11 +140,36 @@ bool ZonesOverlay::EnsureResources()
         return false;
     }
 
-    if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_writeFactory))))
+    // Brushes are device-dependent: created once per render target and
+    // reused every frame via SetColor() instead of being
+    // created/destroyed per rectangle in Render().
+    m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0), &m_fillBrush);
+    m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0), &m_borderBrush);
+    m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0), &m_textBrush);
+    if (!m_fillBrush || !m_borderBrush || !m_textBrush)
     {
-        m_renderTarget->Release();
-        m_renderTarget = nullptr;
+        ReleaseDeviceResources();
         return false;
+    }
+
+    if (!m_writeFactory && FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&m_writeFactory))))
+    {
+        ReleaseDeviceResources();
+        return false;
+    }
+
+    // Text formats are device-independent (owned by m_writeFactory, not the
+    // render target), so they're created once for the life of the overlay
+    // rather than every Render() call.
+    if (!m_textFormat && SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 80.f, L"en-US", &m_textFormat)))
+    {
+        m_textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        m_textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    }
+    if (!m_sizeFormat && SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.f, L"en-US", &m_sizeFormat)))
+    {
+        m_sizeFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        m_sizeFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
     }
     return true;
 }
@@ -185,92 +242,56 @@ void ZonesOverlay::Render()
     const D2D1_COLOR_F highlightColor = ToColorF(m_colors.highlightColor, opacity);
     const D2D1_COLOR_F textColor = ToColorF(m_colors.numberColor, 1.f);
 
-    IDWriteTextFormat* textFormat = nullptr;
-    if (m_showZoneText && m_writeFactory)
-    {
-        if (SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 80.f, L"en-US", &textFormat)))
-        {
-            textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        }
-    }
-
-    IDWriteTextFormat* sizeFormat = nullptr;
-    if (m_showZoneSize && m_showZoneText && m_writeFactory)
-    {
-        if (SUCCEEDED(m_writeFactory->CreateTextFormat(L"Segoe UI", nullptr, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 14.f, L"en-US", &sizeFormat)))
-        {
-            sizeFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            sizeFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        }
-    }
+    const bool drawText = m_showZoneText && m_textFormat;
+    const bool drawSize = drawText && m_showZoneSize && m_sizeFormat;
 
     m_renderTarget->BeginDraw();
     m_renderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f));
 
+    // Border and text colors are constant for the whole frame; only the
+    // fill color varies (highlighted vs. inactive), so set those two once
+    // instead of per rectangle.
+    m_borderBrush->SetColor(borderColor);
+    if (drawText)
+    {
+        m_textBrush->SetColor(textColor);
+    }
+
     for (const auto& item : m_rects)
     {
         const D2D1_COLOR_F& fill = item.highlighted ? highlightColor : inactiveColor;
+        m_fillBrush->SetColor(fill);
 
-        ID2D1SolidColorBrush* fillBrush = nullptr;
-        ID2D1SolidColorBrush* borderBrush = nullptr;
-        m_renderTarget->CreateSolidColorBrush(fill, &fillBrush);
-        m_renderTarget->CreateSolidColorBrush(borderColor, &borderBrush);
+        m_renderTarget->FillRectangle(item.rect, m_fillBrush);
+        m_renderTarget->DrawRectangle(item.rect, m_borderBrush);
 
-        if (fillBrush)
+        if (drawText)
         {
-            m_renderTarget->FillRectangle(item.rect, fillBrush);
-            fillBrush->Release();
-        }
-        if (borderBrush)
-        {
-            m_renderTarget->DrawRectangle(item.rect, borderBrush);
-            borderBrush->Release();
-        }
-
-        if (textFormat)
-        {
-            ID2D1SolidColorBrush* textBrush = nullptr;
-            m_renderTarget->CreateSolidColorBrush(textColor, &textBrush);
-            if (textBrush)
+            const std::wstring idStr = std::to_wstring(item.id + 1);
+            if (drawSize)
             {
-                const std::wstring idStr = std::to_wstring(item.id + 1);
-                if (sizeFormat)
-                {
-                    D2D1_RECT_F topHalf = item.rect;
-                    topHalf.bottom = (item.rect.top + item.rect.bottom) / 2.f;
-                    m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, topHalf, textBrush);
+                D2D1_RECT_F topHalf = item.rect;
+                topHalf.bottom = (item.rect.top + item.rect.bottom) / 2.f;
+                m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), m_textFormat, topHalf, m_textBrush);
 
-                    const int w = item.pixelWidth;
-                    const int h = item.pixelHeight;
-                    wchar_t sizeBuf[32]{};
-                    swprintf_s(sizeBuf, L"%dx%d", w, h);
-                    D2D1_RECT_F bottomHalf = item.rect;
-                    bottomHalf.top = (item.rect.top + item.rect.bottom) / 2.f;
-                    m_renderTarget->DrawTextW(sizeBuf, static_cast<UINT32>(wcslen(sizeBuf)), sizeFormat, bottomHalf, textBrush);
-                }
-                else
-                {
-                    m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), textFormat, item.rect, textBrush);
-                }
-                textBrush->Release();
+                const int w = item.pixelWidth;
+                const int h = item.pixelHeight;
+                wchar_t sizeBuf[32]{};
+                swprintf_s(sizeBuf, L"%dx%d", w, h);
+                D2D1_RECT_F bottomHalf = item.rect;
+                bottomHalf.top = (item.rect.top + item.rect.bottom) / 2.f;
+                m_renderTarget->DrawTextW(sizeBuf, static_cast<UINT32>(wcslen(sizeBuf)), m_sizeFormat, bottomHalf, m_textBrush);
+            }
+            else
+            {
+                m_renderTarget->DrawTextW(idStr.c_str(), static_cast<UINT32>(idStr.size()), m_textFormat, item.rect, m_textBrush);
             }
         }
-    }
-
-    if (textFormat)
-    {
-        textFormat->Release();
-    }
-    if (sizeFormat)
-    {
-        sizeFormat->Release();
     }
 
     const HRESULT endHr = m_renderTarget->EndDraw();
     if (endHr == D2DERR_RECREATE_TARGET)
     {
-        m_renderTarget->Release();
-        m_renderTarget = nullptr;
+        ReleaseDeviceResources();
     }
 }

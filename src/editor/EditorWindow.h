@@ -94,7 +94,7 @@ private:
     void DiscardWorkingCopy(const GUID& uuid);
     void PersistAllWorkingCopies();
     void PushUndoSnapshot();
-    void PushCreateUndoSnapshot();
+    void ResetRedoForNonUndoableChange();
     void PushStructuralUndoSnapshot();
     bool WorkingCopyDiffersFromStore() const;
     bool HasUnsavedChanges() const;

@@ -102,7 +102,7 @@ void EditorWindow::OnNewLayout()
         return;
     }
     PopulateLayoutList();
-    PushCreateUndoSnapshot();
+    ResetRedoForNonUndoableChange();
     NotifyChanged();
 }
 
@@ -173,7 +173,7 @@ void EditorWindow::OnDuplicate()
     }
 
     PopulateLayoutList();
-    PushCreateUndoSnapshot();
+    ResetRedoForNonUndoableChange();
     NotifyChanged();
 }
 
@@ -185,8 +185,6 @@ void EditorWindow::OnDelete()
         return;
     }
 
-    PushStructuralUndoSnapshot();
-
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
 
     wchar_t message[256]{};
@@ -195,6 +193,11 @@ void EditorWindow::OnDelete()
     {
         return;
     }
+
+    // Only record the undo entry once deletion is actually going to happen -
+    // pushing it before the confirmation dialog left a no-op entry on the
+    // undo stack whenever the user clicked "No".
+    PushStructuralUndoSnapshot();
 
     CustomLayouts::instance().DeleteLayout(entry.uuid);
     m_workingCopies.erase(entry.uuid);
@@ -211,8 +214,6 @@ void EditorWindow::OnRename()
     {
         return;
     }
-
-    PushStructuralUndoSnapshot();
 
     const ListEntry& entry = m_entries[static_cast<size_t>(index)];
     const auto* data = EnsureWorkingCopy(entry.uuid);
@@ -240,6 +241,11 @@ void EditorWindow::OnRename()
         name = MakeUniqueName(name);
     }
 
+    // Only record the undo entry once the rename is actually going to be
+    // applied - pushing it before the dialog left a no-op entry on the undo
+    // stack whenever the user cancelled or entered an empty name.
+    PushStructuralUndoSnapshot();
+
     LiteZonesTypes::CustomLayoutData updated = *data;
     updated.name = name;
     if (!CustomLayouts::instance().AddLayout(entry.uuid, updated))
@@ -266,18 +272,22 @@ void EditorWindow::OnApply()
     }
 
     const int listIndex = SelectedListIndex();
+    LayoutData layout;
+    if (!BuildApplyLayout(listIndex, layout))
+    {
+        return;
+    }
+
+    // Only commit the working copy into the persistent store once we know
+    // the layout it produces is actually valid - previously this write
+    // happened before BuildApplyLayout was checked, which would leave the
+    // store holding a commit whose apply then failed.
     if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
     {
         if (LiteZonesTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
         {
             CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
         }
-    }
-
-    LayoutData layout;
-    if (!BuildApplyLayout(listIndex, layout))
-    {
-        return;
     }
 
     AppliedLayouts::instance().ApplyLayout(m_deviceKeys[static_cast<size_t>(comboIndex)], layout);
@@ -293,18 +303,20 @@ void EditorWindow::OnApply()
 void EditorWindow::OnApplyAll()
 {
     const int listIndex = SelectedListIndex();
+    LayoutData layout;
+    if (!BuildApplyLayout(listIndex, layout))
+    {
+        return;
+    }
+
+    // See OnApply(): commit the working copy only after BuildApplyLayout
+    // has confirmed it produces a valid layout.
     if (listIndex >= 0 && listIndex < static_cast<int>(m_entries.size()) && !m_entries[static_cast<size_t>(listIndex)].isTemplate)
     {
         if (LiteZonesTypes::CustomLayoutData* data = EnsureWorkingCopy(m_entries[static_cast<size_t>(listIndex)].uuid))
         {
             CustomLayouts::instance().AddLayout(m_entries[static_cast<size_t>(listIndex)].uuid, *data);
         }
-    }
-
-    LayoutData layout;
-    if (!BuildApplyLayout(listIndex, layout))
-    {
-        return;
     }
 
     for (const auto& deviceKey : m_deviceKeys)
@@ -490,8 +502,14 @@ void EditorWindow::PushUndoSnapshot()
     UpdateUndoState();
 }
 
-void EditorWindow::PushCreateUndoSnapshot()
+void EditorWindow::ResetRedoForNonUndoableChange()
 {
+    // Creating/duplicating a layout isn't undoable through m_undoStack (its
+    // UndoKind values only know how to restore an *existing* uuid's data,
+    // not remove one that didn't exist before), so this just invalidates any
+    // pending redo and refreshes the undo/redo button state. Previously
+    // named PushCreateUndoSnapshot(), which implied it pushed an undo entry
+    // when it never did.
     m_redoStack.clear();
     constexpr size_t kMaxUndo = 50;
     if (m_undoStack.size() > kMaxUndo)

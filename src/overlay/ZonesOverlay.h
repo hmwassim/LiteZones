@@ -37,12 +37,18 @@ private:
     };
 
     bool EnsureResources();
+    void ReleaseDeviceResources();
     void Render();
 
     HWND m_window = nullptr;
     ID2D1Factory* m_d2dFactory = nullptr;
     ID2D1HwndRenderTarget* m_renderTarget = nullptr;
     IDWriteFactory* m_writeFactory = nullptr;
+    IDWriteTextFormat* m_textFormat = nullptr;
+    IDWriteTextFormat* m_sizeFormat = nullptr;
+    ID2D1SolidColorBrush* m_fillBrush = nullptr;
+    ID2D1SolidColorBrush* m_borderBrush = nullptr;
+    ID2D1SolidColorBrush* m_textBrush = nullptr;
     std::vector<DrawableRect> m_rects;
     Colors::ZoneColors m_colors{};
     bool m_showZoneText = false;
