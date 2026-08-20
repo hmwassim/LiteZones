@@ -17,7 +17,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "LiteZones"
-            VALUE "FileDescription", "LiteZones - lightweight window zone-snapping for Windows"
+            VALUE "FileDescription", "LiteZones"
             VALUE "FileVersion", "1.0.0.0"
             VALUE "InternalName", "LiteZones.exe"
             VALUE "LegalCopyright", "MIT License"
