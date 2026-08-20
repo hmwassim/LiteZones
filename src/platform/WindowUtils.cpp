@@ -13,6 +13,68 @@ namespace
     constexpr DWORD kRetrySleepMs = 100;
     constexpr int kMaxPlacementRetries = 10;
     constexpr int kPlacementTolerancePx = 4;
+
+    bool PlacementLanded(HWND window, const RECT& screenTarget) noexcept
+    {
+        RECT current{};
+        if (!GetWindowRect(window, &current))
+        {
+            return true; // window is gone; nothing left to correct
+        }
+        return std::abs(current.left - screenTarget.left) <= kPlacementTolerancePx &&
+               std::abs(current.top - screenTarget.top) <= kPlacementTolerancePx &&
+               std::abs(current.right - current.left - (screenTarget.right - screenTarget.left)) <= kPlacementTolerancePx &&
+               std::abs(current.bottom - current.top - (screenTarget.bottom - screenTarget.top)) <= kPlacementTolerancePx;
+    }
+
+    // Context for the background placement-retry thread. Heap-allocated and
+    // owned by the thread proc so the caller (a hook-callback thread) never
+    // blocks waiting on it.
+    struct PlacementRetryContext
+    {
+        HWND window;
+        RECT rect;
+        RECT screenTarget;
+        BOOL maximizeLater;
+    };
+
+    DWORD WINAPI RetryPlacementThreadProc(LPVOID param)
+    {
+        PlacementRetryContext* ctx = static_cast<PlacementRetryContext*>(param);
+
+        WINDOWPLACEMENT placement{};
+        placement.length = sizeof(placement);
+
+        // Some apps (notably Chromium-based browsers) keep overriding the
+        // placement while their move loop is still finalizing, so keep
+        // re-applying until the window actually lands on the target (or give
+        // up after ~1 second). This runs off the hook-callback thread so a
+        // stubborn app can't stall input processing for the whole session.
+        for (int attempt = 0; attempt < kMaxPlacementRetries; ++attempt)
+        {
+            if (PlacementLanded(ctx->window, ctx->screenTarget))
+            {
+                break;
+            }
+
+            Sleep(kRetrySleepMs);
+            GetWindowPlacement(ctx->window, &placement);
+            if (ctx->maximizeLater || placement.showCmd == SW_SHOWMAXIMIZED)
+            {
+                placement.showCmd = SW_SHOWMAXIMIZED;
+            }
+            else
+            {
+                placement.showCmd = SW_RESTORE;
+            }
+            placement.rcNormalPosition = ctx->rect;
+            placement.flags &= ~WPF_ASYNCWINDOWPLACEMENT;
+            SetWindowPlacement(ctx->window, &placement);
+        }
+
+        delete ctx;
+        return 0;
+    }
 }
 
 namespace WindowUtils
@@ -167,37 +229,24 @@ namespace WindowUtils
         // Do it again, allowing Windows to resize the window and set the correct scaling (Issue #365).
         SetWindowPlacement(window, &placement);
 
-        // Some apps (notably Chromium-based browsers) keep overriding the placement
-        // while their move loop is still finalizing, so keep re-applying until the
-        // window actually lands on the target (or give up after ~1 second).
-        for (int attempt = 0; attempt < kMaxPlacementRetries; ++attempt)
+        // Verify the placement landed; if not, hand the retry-and-verify loop
+        // off to a short-lived background thread instead of blocking here.
+        // This function runs on the hook-callback thread (the same thread
+        // that pumps WH_MOUSE_LL/WH_KEYBOARD_LL and the WinEvent hooks), so
+        // looping with Sleep() in-line would stall input processing for up
+        // to ~1 second whenever a stubborn app (e.g. Chromium) needs nudging.
+        if (!PlacementLanded(window, screenTarget))
         {
-            RECT current{};
-            if (!GetWindowRect(window, &current))
+            PlacementRetryContext* ctx = new PlacementRetryContext{ window, rect, screenTarget, maximizeLater };
+            HANDLE thread = CreateThread(nullptr, 0, &RetryPlacementThreadProc, ctx, 0, nullptr);
+            if (thread)
             {
-                break;
-            }
-            if (std::abs(current.left - screenTarget.left) <= kPlacementTolerancePx &&
-                std::abs(current.top - screenTarget.top) <= kPlacementTolerancePx &&
-                std::abs(current.right - current.left - (screenTarget.right - screenTarget.left)) <= kPlacementTolerancePx &&
-                std::abs(current.bottom - current.top - (screenTarget.bottom - screenTarget.top)) <= kPlacementTolerancePx)
-            {
-                break;
-            }
-
-            Sleep(kRetrySleepMs);
-            GetWindowPlacement(window, &placement);
-            if (maximizeLater || placement.showCmd == SW_SHOWMAXIMIZED)
-            {
-                placement.showCmd = SW_SHOWMAXIMIZED;
+                CloseHandle(thread);
             }
             else
             {
-                placement.showCmd = SW_RESTORE;
+                delete ctx;
             }
-            placement.rcNormalPosition = rect;
-            placement.flags &= ~WPF_ASYNCWINDOWPLACEMENT;
-            SetWindowPlacement(window, &placement);
         }
     }
 

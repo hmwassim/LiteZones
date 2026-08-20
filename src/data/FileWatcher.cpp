@@ -61,9 +61,25 @@ void FileWatcher::Stop()
     }
     if (m_thread)
     {
-        WaitForSingleObject(m_thread, kStopTimeoutMs);
+        const DWORD waitResult = WaitForSingleObject(m_thread, kStopTimeoutMs);
         CloseHandle(m_thread);
         m_thread = nullptr;
+
+        if (waitResult != WAIT_OBJECT_0)
+        {
+            // Run() is still alive somewhere between WaitForMultipleObjects()
+            // and its next touch of m_dirHandle/m_overlapped/m_hwnd (this
+            // should only happen if CancelIo() can't complete promptly, e.g.
+            // a config directory on a network share). Closing those handles
+            // out from under the still-running thread would be a
+            // use-after-free, so leak them instead: they're closed once the
+            // process exits, and Start() always allocates fresh ones rather
+            // than reusing these.
+            m_dirHandle = INVALID_HANDLE_VALUE;
+            m_stopEvent = nullptr;
+            m_hwnd = nullptr;
+            return;
+        }
     }
     if (m_dirHandle != INVALID_HANDLE_VALUE)
     {

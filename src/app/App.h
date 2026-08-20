@@ -41,6 +41,11 @@ private:
     void Shutdown();
     void Exit();
 
+    // Disables the three tracking hooks that are only needed while a drag is
+    // in progress (location-change, mouse-button, mouse-move). Safe to call
+    // even if m_hooks is null.
+    void DisableTrackingHooks();
+
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
     bool m_snappingEnabled = true;

@@ -188,6 +188,16 @@ void App::ReloadConfig()
     m_tray.UpdateTip(m_hwnd, m_snappingEnabled);
 }
 
+void App::DisableTrackingHooks()
+{
+    if (m_hooks)
+    {
+        m_hooks->DisableLocationChangeTracking();
+        m_hooks->DisableMouseButtonHook();
+        m_hooks->DisableMouseMoveTracking();
+    }
+}
+
 void App::ReloadWorkAreas(bool forceRelayout)
 {
     if (m_dragController)
@@ -195,12 +205,7 @@ void App::ReloadWorkAreas(bool forceRelayout)
         m_dragController->MoveSizeEnd();
         if (!m_dragController->IsDragging())
         {
-            if (m_hooks)
-            {
-                m_hooks->DisableLocationChangeTracking();
-                m_hooks->DisableMouseButtonHook();
-                m_hooks->DisableMouseMoveTracking();
-            }
+            DisableTrackingHooks();
         }
     }
 
@@ -333,12 +338,7 @@ void App::HandleMoveSizeEnd()
     // case the drag is still logically active and hooks must stay alive.
     if (m_dragController && !m_dragController->IsDragging())
     {
-        if (m_hooks)
-        {
-            m_hooks->DisableLocationChangeTracking();
-            m_hooks->DisableMouseButtonHook();
-            m_hooks->DisableMouseMoveTracking();
-        }
+        DisableTrackingHooks();
     }
 }
 
@@ -350,12 +350,7 @@ void App::HandleWindowDestroyed(HWND window)
     }
     if (m_dragController && !m_dragController->IsDragging())
     {
-        if (m_hooks)
-        {
-            m_hooks->DisableLocationChangeTracking();
-            m_hooks->DisableMouseButtonHook();
-            m_hooks->DisableMouseMoveTracking();
-        }
+        DisableTrackingHooks();
     }
 }
 
