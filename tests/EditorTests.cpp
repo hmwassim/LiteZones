@@ -139,6 +139,25 @@ void TestGridDataMerge()
     CHECK(modelAll.rowsPercents() == expectedFull);
     CHECK(modelAll.columnsPercents() == expectedFull);
     CHECK(modelAll.cellChildMap() == expectedMapSingle);
+
+    // Regression: merging two diagonal zones (indices 1 and 2, i.e. top-right
+    // and bottom-left) forces the closure to pull in zones 0 and 3 as well,
+    // since their bounding box is the whole grid. The lowest closure index
+    // (0) is below the lowest *selected* index (1); DoMerge must position the
+    // merged zone using the closure's lowest index, not the selection's, or
+    // it inserts past the end of the (now-empty) remaining-zones vector.
+    GridLayoutInfo modelDiagonal(2, 2);
+    modelDiagonal.rowsPercents() = { 5000, 5000 };
+    modelDiagonal.columnsPercents() = { 5000, 5000 };
+    modelDiagonal.cellChildMap() = { { 0, 1 }, { 2, 3 } };
+    GridData::Grid gridDiagonal(modelDiagonal);
+    gridDiagonal.DoMerge({ 1, 2 });
+    CHECK(gridDiagonal.Zones().size() == 1);
+    CHECK(modelDiagonal.rows() == 1);
+    CHECK(modelDiagonal.columns() == 1);
+    CHECK(modelDiagonal.rowsPercents() == expectedFull);
+    CHECK(modelDiagonal.columnsPercents() == expectedFull);
+    CHECK(modelDiagonal.cellChildMap() == expectedMapSingle);
 }
 
 void TestCanvasMath()

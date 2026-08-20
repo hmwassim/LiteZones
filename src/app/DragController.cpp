@@ -303,12 +303,21 @@ void DragController::SetWindowTransparency()
     }
 
     m_windowProperties.exstyle = GetWindowLongPtrW(m_draggingWindow, GWL_EXSTYLE);
+    const bool wasLayered = (m_windowProperties.exstyle & WS_EX_LAYERED) != 0;
 
     SetWindowLongPtrW(m_draggingWindow, GWL_EXSTYLE, m_windowProperties.exstyle | WS_EX_LAYERED);
 
-    if (!GetLayeredWindowAttributes(m_draggingWindow, &m_windowProperties.colorKey, &m_windowProperties.alpha, &m_windowProperties.flags))
+    // GetLayeredWindowAttributes only succeeds for windows that were already
+    // layered before we just added WS_EX_LAYERED above (per MSDN), which is
+    // false for almost every normal window. In that (common) case there are
+    // no "previous" layered attributes to preserve, so fall back to values
+    // that make ResetWindowTransparency() simply strip WS_EX_LAYERED again
+    // instead of bailing out early and leaking the extended style change.
+    if (!wasLayered || !GetLayeredWindowAttributes(m_draggingWindow, &m_windowProperties.colorKey, &m_windowProperties.alpha, &m_windowProperties.flags))
     {
-        return;
+        m_windowProperties.colorKey = 0;
+        m_windowProperties.alpha = 255;
+        m_windowProperties.flags = LWA_ALPHA;
     }
 
     if (SetLayeredWindowAttributes(m_draggingWindow, 0, kDragTransparencyAlpha, LWA_ALPHA))

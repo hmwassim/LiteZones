@@ -51,6 +51,13 @@ void TestGuidHelpers()
 
     CHECK(!Util::GuidFromString(L"not-a-guid", parsed));
     CHECK(!Util::GuidFromString(L"F762BAD6-DAA1-4997-9497-E11DFEB72F2Z", parsed));
+
+    // Regression: strict "8-4-4-4-12" parsing must check hyphen *positions*,
+    // not just that there are exactly 4 of them and 32 hex digits somewhere
+    // in a 36-char string. Shifting one hyphen over by one still has 4
+    // hyphens and 32 hex digits but is not a well-formed GUID string.
+    CHECK(!Util::GuidFromString(L"F762BAD-6DAA1-4997-9497-E11DFEB72F21", parsed));
+    CHECK(!Util::GuidFromString(L"-762BAD6FDAA1-4997-9497-E11DFEB72F21", parsed));
 }
 
 void TestCustomLayoutsStore()

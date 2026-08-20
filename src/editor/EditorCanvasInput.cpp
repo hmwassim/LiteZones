@@ -286,6 +286,7 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 RECT rect = CanvasMath::Normalize(view.canvasDrawRect);
                 view.canvasDrawing = false;
+                bool zoneAdded = false;
                 if (rect.right - rect.left >= CanvasMath::MinZoneSize && rect.bottom - rect.top >= CanvasMath::MinZoneSize)
                 {
                     NotifyBeforeEdit();
@@ -294,6 +295,7 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
                     });
                     view.selectedCanvasZone = static_cast<int>(view.canvasModel->zones.size()) - 1;
+                    zoneAdded = true;
                 }
                 else
                 {
@@ -304,7 +306,15 @@ LRESULT CALLBACK CanvasProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 {
                     ReleaseCapture();
                 }
-                NotifyEdited();
+                // Only fire onEdited (marks the layout dirty, enables Apply)
+                // when a zone was actually added. A too-small draw is a no-op:
+                // NotifyBeforeEdit() above was never called for it either, so
+                // firing NotifyEdited() unconditionally would mark the layout
+                // as modified with no matching undo snapshot to revert to.
+                if (zoneAdded)
+                {
+                    NotifyEdited();
+                }
                 InvalidateRect(hwnd, nullptr, TRUE);
             }
             else if (view.canvasInteraction == CanvasInteraction::Move || view.canvasInteraction == CanvasInteraction::Resize)

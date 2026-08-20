@@ -58,9 +58,15 @@ App::App(HINSTANCE hInstance) :
 
 App::~App()
 {
+    // Clean up any resources acquired during a partially-successful Init(),
+    // but do NOT call ExitProcess() here: this destructor also runs during
+    // normal stack unwind when Init() returns false (e.g. main() does
+    // `if (!app.Init()) { ...; return 1; }`), and forcing ExitProcess(0) at
+    // that point would discard main()'s exit code and make a genuine startup
+    // failure look like a clean, successful exit to the OS/launcher.
     if (m_hwnd)
     {
-        Exit();
+        Shutdown();
     }
 }
 
@@ -262,7 +268,7 @@ void App::OpenSettings()
     }
 }
 
-void App::Exit()
+void App::Shutdown()
 {
     KillTimer(m_hwnd, kFlushTimerId);
     AppZoneHistory::instance().FlushIfDirty();
@@ -280,6 +286,11 @@ void App::Exit()
     }
     m_tray.RemoveIcon();
     m_hwnd = nullptr;
+}
+
+void App::Exit()
+{
+    Shutdown();
     ExitProcess(0);
 }
 
@@ -435,14 +446,7 @@ LRESULT App::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_DESTROY:
-        KillTimer(m_hwnd, kFlushTimerId);
-        AppZoneHistory::instance().FlushIfDirty();
-        if (m_hooks)
-        {
-            m_hooks->Stop();
-        }
-        m_tray.RemoveIcon();
-        m_hwnd = nullptr;
+        Shutdown();
         ExitProcess(0);
         break;
 

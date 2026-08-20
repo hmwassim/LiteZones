@@ -38,6 +38,7 @@ private:
     void HandleMoveSizeEnd();
     void HandleMoveSizeUpdate();
     void HandleWindowDestroyed(HWND window);
+    void Shutdown();
     void Exit();
 
     HINSTANCE m_hInstance = nullptr;

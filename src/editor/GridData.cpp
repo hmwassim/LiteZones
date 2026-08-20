@@ -518,13 +518,24 @@ namespace GridData
             return;
         }
 
-        int lowestIndex = indices.front();
-        for (const int index : indices)
+        const auto [closureIndices, closureZone] = ComputeClosure(indices);
+        if (closureIndices.empty())
+        {
+            return;
+        }
+
+        // Must be derived from the full closure, not just the caller-supplied
+        // selection: the closure can pull in zones below any originally
+        // selected index (e.g. merging two diagonal zones in a 2x2 grid pulls
+        // in both remaining corners), and those lower-indexed zones are also
+        // removed from m_zones below. Using a selection-only index here could
+        // exceed remaining.size() and make the insert() below insert past the
+        // end of the vector (undefined behavior).
+        int lowestIndex = closureIndices.front();
+        for (const int index : closureIndices)
         {
             lowestIndex = std::min(lowestIndex, index);
         }
-
-        const auto [closureIndices, closureZone] = ComputeClosure(indices);
 
         std::vector<Zone> remaining;
         for (const Zone& zone : m_zones)
@@ -535,6 +546,10 @@ namespace GridData
                 remaining.push_back(zone);
             }
         }
+
+        // Defensive clamp: lowestIndex should always equal the count of
+        // remaining zones that precede it, but never insert past-the-end.
+        lowestIndex = std::min(lowestIndex, static_cast<int>(remaining.size()));
 
         m_zones = std::move(remaining);
         m_zones.insert(m_zones.begin() + lowestIndex, closureZone);

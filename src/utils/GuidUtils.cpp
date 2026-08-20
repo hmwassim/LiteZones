@@ -29,6 +29,17 @@ namespace Util
             return false;
         }
 
+        // Strict "8-4-4-4-12": hyphens must fall at exactly these positions,
+        // not just be present somewhere among the 36 characters.
+        constexpr size_t kHyphenPositions[] = { 8, 13, 18, 23 };
+        for (const size_t pos : kHyphenPositions)
+        {
+            if (str[pos] != L'-')
+            {
+                return false;
+            }
+        }
+
         unsigned char bytes[16]{};
         size_t hexCount = 0;
         for (size_t i = 0; i < str.size(); ++i)
@@ -36,6 +47,11 @@ namespace Util
             const wchar_t c = str[i];
             if (c == L'-')
             {
+                if (i != kHyphenPositions[0] && i != kHyphenPositions[1] &&
+                    i != kHyphenPositions[2] && i != kHyphenPositions[3])
+                {
+                    return false;
+                }
                 continue;
             }
             const int value = HexValue(c);
